@@ -1,5 +1,5 @@
-// A changed cache name forces installed iPhone webapps to adopt version 2.1.
-const CACHE='ro-metronom-v2-1-20261017';
+// A changed cache name forces installed iPhone webapps to adopt version 2.0.
+const CACHE='ro-metronom-v2-2-20261017';
 const STATIC=['./','./index.html','./manifest.webmanifest','./icon-192.png','./icon-512.png'];
 self.addEventListener('install',event=>{
   event.waitUntil(caches.open(CACHE).then(cache=>cache.addAll(STATIC)).then(()=>self.skipWaiting()));
