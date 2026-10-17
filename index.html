@@ -114,15 +114,16 @@
       <div class="setting-label"><label for="duration1">Hurtigt tempo (sek.)</label><div class="number-control interval-control"><button type="button" data-change="duration:1:-5" aria-label="Kortere hurtigt interval">−</button><input id="duration1" type="number" inputmode="numeric" min="10" max="900" step="5" value="60"><button type="button" data-change="duration:1:5" aria-label="Længere hurtigt interval">+</button></div></div>
       <p class="small-note">Tiden regnes fra hvert temposkift. Ved manuel ændring starter nedtællingen forfra.</p>
       <div class="group-title">Lyd</div>
+      <div class="sound-row"><label for="power">Lydprofil</label><select id="power"><option value="normal">Blød (som før)</option><option value="clear">Tydelig</option><option value="strong">Ekstra tydelig</option></select></div>
       <div class="sound-row"><label for="sound">Metronomlyd</label><select id="sound"><option value="wood">Varmt træklik</option><option value="classic">Klassisk tik-tak</option><option value="soft">Ekstra blød</option></select></div>
       <div class="sound-row"><label for="warning">Sidste tre slag</label><select id="warning"><option value="bell">Blød klokkelyd</option><option value="rising">Lysere klik</option><option value="echo">Lille ekko</option><option value="off">Ingen advarsel</option></select></div>
       <div class="setting-label"><label for="volume">Lydstyrke</label><span class="volume-label" id="volumeLabel">80 %</span></div>
       <div class="volume"><span aria-hidden="true">🔈</span><input id="volume" type="range" min="0" max="100" value="80" step="5" aria-label="Lydstyrke"><span aria-hidden="true">🔊</span></div>
-      <p class="tip">Lyden er forstærket i denne version. Start gerne med moderat lydstyrke, især med høretelefoner.</p>
+      <p class="tip">Ekstra tydelig er til iPhones højttaler. Begynd med lav lydstyrke ved høretelefoner. Telefonens højttaler sætter den endelige grænse.</p>
       <p class="small-note">Webappen er til brug med tændt skærm. iPhone kan stoppe lyden, når skærmen låses. Rigtig baggrundslyd kræver vores iOS-app.</p>
     </div>
   </details>
-  <footer>Ro-Metronom · Webversion 2.0</footer>
+  <footer>Ro-Metronom · Webversion 2.1</footer>
 </main>
 <script>
 (() => {
@@ -130,7 +131,7 @@
   const $ = id => document.getElementById(id);
   const clamp = (n, min, max) => Math.min(max, Math.max(min, n));
   const clampInt = (value, fallback, min, max) => Number.isFinite(Number(value)) && String(value).trim() !== '' ? clamp(Math.round(Number(value)),min,max) : fallback;
-  const defaults = {presets:[21,42],durations:[60,60],selected:0,auto:false,sound:'wood',warning:'bell',volume:80};
+  const defaults = {presets:[21,42],durations:[60,60],selected:0,auto:false,sound:'wood',warning:'bell',power:'strong',volume:80};
   const state = {...defaults, presets:[...defaults.presets],durations:[...defaults.durations],playing:false,ctx:null,noise:null,master:null,nextTime:0,stageStart:0,stageEnd:0,beat:0,timer:null,frame:null,wake:null,generation:0,flashes:[]};
   try {
     const old = JSON.parse(localStorage.getItem('olsen-rometronom-v1') || '{}');
@@ -142,9 +143,10 @@
     if (typeof saved.auto==='boolean') state.auto=saved.auto;
     if (['wood','classic','soft'].includes(saved.sound)) state.sound=saved.sound;
     if (['off','rising','echo','bell'].includes(saved.warning)) state.warning=saved.warning;
+    if (['normal','clear','strong'].includes(saved.power)) state.power=saved.power;
     if (Number.isFinite(Number(saved.volume))) state.volume=clamp(Number(saved.volume),0,100);
   } catch (_) {}
-  const save=()=>{try {localStorage.setItem('olsen-rometronom-v2',JSON.stringify({presets:state.presets,durations:state.durations,selected:state.selected,auto:state.auto,sound:state.sound,warning:state.warning,volume:state.volume}));} catch(_) {}};
+  const save=()=>{try {localStorage.setItem('olsen-rometronom-v2',JSON.stringify({presets:state.presets,durations:state.durations,selected:state.selected,auto:state.auto,sound:state.sound,warning:state.warning,power:state.power,volume:state.volume}));} catch(_) {}};
 
   function updateDial() {
     let secondsText='—', caption='Manuelt tempo', progress=0;
@@ -173,6 +175,7 @@
     $('autoDescription').textContent=state.auto?'Tiderne indstilles nedenfor':'Skifter mellem de to tempi';
     $('sound').value=state.sound;
     $('warning').value=state.warning;
+    $('power').value=state.power;
     $('volume').value=state.volume;
     $('volumeLabel').textContent=state.volume+' %';
     $('start').textContent=state.playing?'■ Stop':'▶ Start';
@@ -219,41 +222,55 @@
     g.exponentialRampToValueAtTime(Math.max(.0001,amplitude),t+attack);
     g.exponentialRampToValueAtTime(.00001,t+release);
   }
+  // Sound is shaped for a small iPhone speaker: not simply boosted into clipping.
+  // A stronger 1–3 kHz attack and a slightly longer body improve audible presence.
+  const loudness = () => state.power==='strong'?3.5:state.power==='clear'?2:1;
   function tap(t, opts={}) {
     const ctx=state.ctx;
     if(!ctx || !state.master || !state.volume) return;
     const kind=state.sound;
-    const scale=state.volume/100 * (opts.scale||1);
+    const strong=state.power==='strong', clear=state.power!=='normal';
+    const scale=state.volume/100 * loudness() * (opts.scale||1);
     const pitch=opts.pitch||1;
-    const freq=kind==='classic'?950:kind==='soft'?540:690;
-    const tonal=ctx.createOscillator(); const tg=ctx.createGain();
+    const freq=kind==='classic'?970:kind==='soft'?565:770;
+    const tonal=ctx.createOscillator(), tg=ctx.createGain();
     tonal.type=kind==='soft'?'sine':'triangle';
     tonal.frequency.setValueAtTime(freq*pitch,t);
-    tonal.frequency.exponentialRampToValueAtTime(freq*.59*pitch,t+.072);
-    env(tg,t,scale*(kind==='soft'?.40:.56),.0025,kind==='soft'?.120:.084);
+    tonal.frequency.exponentialRampToValueAtTime(freq*.65*pitch,t+.098);
+    env(tg,t,scale*(kind==='soft'?.38:.51),.0025,clear?.16:.085);
     tonal.connect(tg).connect(state.master);
-    tonal.start(t);tonal.stop(t+.135);
+    tonal.start(t);tonal.stop(t+(clear?.19:.135));
     const body=ctx.createOscillator(), bg=ctx.createGain();
     body.type='sine';
-    body.frequency.setValueAtTime((kind==='classic'?460:330)*pitch,t);
-    body.frequency.exponentialRampToValueAtTime((kind==='classic'?330:210)*pitch,t+.11);
-    env(bg,t,scale*(kind==='soft'?.20:.25),.004,.13);
+    body.frequency.setValueAtTime((kind==='classic'?480:380)*pitch,t);
+    body.frequency.exponentialRampToValueAtTime((kind==='classic'?330:240)*pitch,t+.13);
+    env(bg,t,scale*(kind==='soft'?.23:.28),.004,clear?.18:.13);
     body.connect(bg).connect(state.master);
-    body.start(t);body.stop(t+.14);
-    const n=ctx.createBufferSource(),filter=ctx.createBiquadFilter(),ng=ctx.createGain();
+    body.start(t);body.stop(t+(clear?.20:.14));
+    const n=ctx.createBufferSource(), filter=ctx.createBiquadFilter(), ng=ctx.createGain();
     n.buffer=state.noise;
     filter.type=kind==='soft'?'lowpass':'bandpass';
-    filter.frequency.value=kind==='classic'?3000:kind==='soft'?1400:2000;
-    filter.Q.value=.65;
-    env(ng,t,scale*(kind==='soft'?.16:.34),.002,.04);
+    filter.frequency.value=kind==='classic'?3050:kind==='soft'?1750:2450;
+    filter.Q.value=.8;
+    env(ng,t,scale*(kind==='soft'?.14:.27),.0015,clear?.070:.04);
     n.connect(filter).connect(ng).connect(state.master);
-    n.start(t);n.stop(t+.05);
+    n.start(t);n.stop(t+(clear?.075:.05));
+    if(clear) {
+      // Presence overtone audible on a phone's tiny speaker, kept below harshness.
+      const edge=ctx.createOscillator(), eg=ctx.createGain();
+      edge.type='sine';
+      edge.frequency.setValueAtTime((strong?1620:1470)*pitch,t);
+      edge.frequency.exponentialRampToValueAtTime((strong?1160:1100)*pitch,t+.11);
+      env(eg,t,scale*(kind==='soft'?.14:.24),.002, strong?.125:.09);
+      edge.connect(eg).connect(state.master);
+      edge.start(t);edge.stop(t+.15);
+    }
   }
   function bell(t,order) {
     const ctx=state.ctx;
     if(!ctx || !state.master || !state.volume) return;
     const fundamental=[850,1010,1200][clamp(order-1,0,2)];
-    const vol=state.volume/100;
+    const vol=state.volume/100*loudness();
     [1,2,3].forEach((mult,i)=>{
       const osc=ctx.createOscillator(),gain=ctx.createGain();
       osc.type='sine';osc.frequency.value=fundamental*mult;
@@ -314,15 +331,25 @@
       if(!Ctx) throw new Error('Denne browser understøtter ikke Web Audio.');
       if(!state.ctx) {
         state.ctx=new Ctx();state.noise=createNoise(state.ctx);
-        const compressor=state.ctx.createDynamicsCompressor();
-        compressor.threshold.value=-10;
-        compressor.knee.value=14;
-        compressor.ratio.value=4;
-        compressor.attack.value=.002;
-        compressor.release.value=.12;
+        // Smooth saturation gives more average acoustic energy than a needle-like
+        // transient; a peak limiter prevents numerical clipping on the iPhone.
+        const saturation=state.ctx.createWaveShaper();
+        const curve=new Float32Array(4096);
+        for(let i=0;i<curve.length;i++) {
+          const x=(i/(curve.length-1))*2-1;
+          curve[i]=.95*Math.tanh(1.7*x)/Math.tanh(1.7);
+        }
+        saturation.curve=curve;
+        saturation.oversample='2x';
+        const limiter=state.ctx.createDynamicsCompressor();
+        limiter.threshold.value=-2;
+        limiter.knee.value=0;
+        limiter.ratio.value=18;
+        limiter.attack.value=.001;
+        limiter.release.value=.08;
         state.master=state.ctx.createGain();
-        state.master.gain.value=1.20;
-        state.master.connect(compressor).connect(state.ctx.destination);
+        state.master.gain.value=1;
+        state.master.connect(saturation).connect(limiter).connect(state.ctx.destination);
       }
       await state.ctx.resume();
       if(state.ctx.state!=='running') throw new Error('Lyden er midlertidigt sat på pause af iPhone.');
@@ -363,6 +390,7 @@
   }));
   $('sound').addEventListener('change',e=>{state.sound=e.target.value;save();});
   $('warning').addEventListener('change',e=>{state.warning=e.target.value;save();});
+  $('power').addEventListener('change',e=>{state.power=e.target.value;save();});
   $('volume').addEventListener('input',e=>{state.volume=Number(e.target.value);$('volumeLabel').textContent=state.volume+' %';save();});
   document.addEventListener('visibilitychange',()=>{
     if(!document.hidden && state.playing && state.ctx && state.ctx.state==='suspended') {

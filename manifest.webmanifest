@@ -1,7 +1,7 @@
 {
   "name": "Ro-Metronom – Olsens rotræning",
   "short_name": "Ro-Metronom",
-  "description": "To individuelt indstillede temposkift, nedtælling og tre advarselsklik",
+  "description": "To tempi med nedtælling, tre advarselsslag og tydelig iPhone-lyd",
   "lang": "da",
   "start_url": "./index.html",
   "scope": "./",

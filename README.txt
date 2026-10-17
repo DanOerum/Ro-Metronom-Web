@@ -1,35 +1,31 @@
-RO-METRONOM — WEBAPP VERSION 2.0
+RO-METRONOM — WEBAPP VERSION 2.1
 ================================
 
-NYT I VERSION 2.0
-- Stor ring viser sekunder til næste automatiske temposkift frem for BPM.
-- Hvert tempo kan have sin egen varighed (10-900 sekunder, standard 60/60).
-- Højere og tydeligere metronomlyd med kompressor/peak-begrænsning.
-- Advarsel på sidste tre slag: klokkelyd, lysere klik, ekko eller fra.
-- Bevarer tidligere indstillinger fra version 1, inklusive BPM.
-- Forbedret offline-cache, så webappen kan opdateres.
+NYT I VERSION 2.1
+- Opdateret lydmotor med ekstra tydelige klik til iPhones lille højttaler.
+- Tre lydprofiler under Indstillinger > Lyd > Lydprofil:
+  Blød (som før), Tydelig og Ekstra tydelig (standard).
+- Glat lydbegrænsning mod digital overstyring. Telefonens højttaler
+  bestemmer den faktiske maksimale lydstyrke.
+- Tydeligere klik uden at ændre klokkens advarsel på de sidste tre slag.
+- Udseende, nedtælling, to forskellige tempi og tidsintervaller beholdt.
+- Eksisterende 2.0-indstillinger bevares, herunder lydstyrke og BPM.
+- Ny service worker-cache tvinger opdatering af installeret webapp.
 
-BRUG
-- De to store knapper viser, hvilket tempo der er valgt (21 og 42 BPM som standard).
-- Start/Stop starter metronomen. Automatisk skift vælges med kontakten.
-- Ringen tæller ned til næste skift, når automatisk skift er aktivt.
-- Med automatisk skift slået fra viser ringen en streg (der er intet planlagt skift).
-- Når metronomen er stoppet, vises antal sekunder for den kommende periode.
-- I Indstillinger kan BPM og varighed for både roligt og hurtigt tempo justeres.
-- Når du ændrer en tid eller vælger en anden tempostilling, nulstilles den aktuelle periode.
-- Advarselstypen vælges under Indstillinger / Lyd.
-- Start med moderat lydstyrke, især med hovedtelefoner.
+OPDATERING PÅ GITHUB
+1. Gå til dit repository Ro-Metronom-Web.
+2. Upload alle seks filer fra DENNE mappe i roden, ikke mappen selv.
+3. Overskriv de tidligere filer med samme navn og Commit changes.
+4. Afvent grønt flueben på Actions > pages build and deployment.
+5. Luk webappen på iPhone helt, og åbn den igen.
+6. Kontrollér at der står 'Webversion 2.1' nederst i appen.
+   Hvis ikke: åbn webadressen i Safari først, genstart webappen.
 
-OPDATER DIN GITHUB PAGES-SIDE (Ro-Metronom-Web)
-1. Pak ZIP-filen ud på din Windows-computer.
-2. Gå til dit GitHub-repository Ro-Metronom-Web → Code → Add file → Upload files.
-3. Upload ALLE FILER inde fra denne mappe til roden af repositoriet.
-4. GitHub bør skrive, at de fem eksisterende filer bliver erstattet.
-5. Klik Commit changes og vent til Pages har udgivet den nye version.
-6. Luk Ro-Metronom helt på din iPhone og åbn igen. Det kan tage en ekstra genstart
-   eller opdatering før iOS bruger den nye service worker.
+LYDSTYRKE
+Prøv indstillingen 'Ekstra tydelig'. Start ved lav lydstyrke ved
+brug af høretelefoner, og skru gradvist op. iPhone kan begrænse
+maksimal lydstyrke afhængigt af udstyr, rute og systemindstillinger.
 
-VIGTIGT
-Webappen kan stoppe med at spille, når iPhone-skærmen låses. Det er en
-begrænsning i iOS/webapps og kan ikke loves løst uden en egentlig iOS-app.
-GitHub Pages kræver HTTPS, hvilket det allerede bruger.
+BEGRÆNSNING
+Webappen kan stadig blive sat på pause, når iPhones skærm låses.
+Den native iPhone-app løser på sigt dette med egentlig baggrundslyd.
