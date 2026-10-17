@@ -2,42 +2,44 @@
 <html lang="da">
 <head>
   <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <meta name="theme-color" content="#0f2029">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-  <meta name="apple-mobile-web-app-title" content="Rometronom">
-  <meta name="description" content="En enkel metronom til romaskinen med to tempi og tidsstyret skift.">
+  <meta name="apple-mobile-web-app-title" content="Ro-Metronom">
+  <meta name="description" content="Ro-Metronom med to rytmer, individuelt indstillede intervaller og blid lydadvarsel før skift.">
   <link rel="manifest" href="manifest.webmanifest">
   <link rel="apple-touch-icon" href="icon-192.png">
-  <title>Rometronom · Olsen</title>
+  <title>Ro-Metronom · Olsen</title>
 <style>
-  :root { color-scheme: dark; --bg:#0e1d25; --panel:#192b35; --panel2:#20343e; --accent:#eab968; --text:#f4f4ef; --muted:#a7bbc2; --stroke:#334953; }
-  * { box-sizing:border-box; }
+  :root { color-scheme:dark; --bg:#0e1d25; --panel:#192b35; --panel2:#20343e; --accent:#eab968; --text:#f4f4ef; --muted:#a7bbc2; --stroke:#334953; }
+  *, *:before, *:after { box-sizing:border-box; }
   [hidden] { display:none !important; }
   html { min-height:100%; background:var(--bg); }
-  body { margin:0; color:var(--text); font: 16px/1.45 -apple-system,BlinkMacSystemFont,"Segoe UI",system-ui,sans-serif; background: radial-gradient(ellipse 100% 60% at 50% -10%, #28424d 0%, var(--bg) 80%); -webkit-tap-highlight-color:transparent; }
-  button,select,input { font:inherit; }
+  body { margin:0; min-height:100svh; color:var(--text); font:16px/1.45 -apple-system,BlinkMacSystemFont,"Segoe UI",system-ui,sans-serif; background:radial-gradient(ellipse 100% 65% at 50% -10%,#28424d 0%,var(--bg) 80%); -webkit-tap-highlight-color:transparent; }
+  button, select, input { font:inherit; }
   button { cursor:pointer; }
-  main { width:min(100%,480px); min-height:100svh; margin:0 auto; padding: max(env(safe-area-inset-top),24px) 21px max(env(safe-area-inset-bottom),28px); display:flex; flex-direction:column; }
+  main { width:min(100%,480px); min-height:100svh; margin:0 auto; padding:max(env(safe-area-inset-top),24px) 21px max(env(safe-area-inset-bottom),26px); display:flex; flex-direction:column; }
   header { text-align:center; }
-  .eyebrow { color:var(--accent); font-weight:750; font-size:12px; text-transform:uppercase; letter-spacing:.22em; }
+  .eyebrow { color:var(--accent); font-weight:750; font-size:11px; text-transform:uppercase; letter-spacing:.22em; }
   h1 { margin:4px 0 0; font-size:30px; font-weight:740; letter-spacing:-.05em; }
   .tagline { margin:4px 0 0; color:var(--muted); font-size:14px; }
-  .dial { display:grid; place-items:center; margin:30px auto 24px; width:222px; height:222px; border-radius:50%; border:1px solid #4a5d62; background:radial-gradient(circle at 45% 30%, #32464f, #152831 72%); box-shadow: 0 14px 42px #0005, inset 0 2px 5px #ffffff0a; position:relative; }
-  .dial:before { content:""; position:absolute; inset:12px; border:1px solid #54636a; border-radius:50%; opacity:.65; }
+  .dial { --sweep:0deg; display:grid; place-items:center; margin:28px auto 24px; width:222px; height:222px; border-radius:50%; border:1px solid #4a5d62; background:radial-gradient(circle at 45% 30%,#32464f,#152831 72%); box-shadow:0 14px 42px #0005,inset 0 2px 5px #ffffff0a; position:relative; isolation:isolate; }
+  .dial:before { content:""; position:absolute; inset:11px; border-radius:50%; background:conic-gradient(from -90deg,var(--accent) 0 var(--sweep),#54636a var(--sweep) 360deg); opacity:.68; -webkit-mask:radial-gradient(transparent calc(100% - 2px),black calc(100% - 1px)); mask:radial-gradient(transparent calc(100% - 2px),black calc(100% - 1px)); }
   .dial.hit { animation:thump .21s ease-out; }
-  @keyframes thump { 0%{box-shadow:0 0 0 0 #eab9685a, 0 14px 42px #0005, inset 0 2px 5px #ffffff0a;} 100%{box-shadow:0 0 0 15px #eab96800, 0 14px 42px #0005, inset 0 2px 5px #ffffff0a;} }
+  @keyframes thump { 0% { box-shadow:0 0 0 0 #eab9685a,0 14px 42px #0005,inset 0 2px 5px #ffffff0a; } 100% { box-shadow:0 0 0 15px #eab96800,0 14px 42px #0005,inset 0 2px 5px #ffffff0a; } }
   .readout { position:relative; z-index:1; text-align:center; }
-  .tempo { font-variant-numeric:tabular-nums; font-size:90px; line-height:1; font-weight:780; letter-spacing:-.075em; color:var(--accent); }
-  .bpm { color:var(--muted); font-size:13px; text-transform:uppercase; letter-spacing:.14em; font-weight:650; margin-top:4px; }
-  .preset-title { margin:0 0 10px; color:var(--muted); font-size:13px; font-weight:650; text-transform:uppercase; letter-spacing:.13em; }
+  .seconds { font-variant-numeric:tabular-nums; font-size:89px; line-height:1; font-weight:780; letter-spacing:-.07em; color:var(--accent); }
+  .seconds.muted { color:#a7bbc2; }
+  .seconds-caption { color:var(--muted); font-size:12px; text-transform:uppercase; letter-spacing:.10em; font-weight:650; margin-top:8px; }
+  .preset-title { margin:0 0 10px; color:var(--muted); font-size:12px; font-weight:650; text-transform:uppercase; letter-spacing:.14em; }
   .presets { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
-  .preset { min-height:77px; border:1px solid var(--stroke); background:var(--panel); color:var(--text); border-radius:16px; transition:background .1s, border-color .1s; }
+  .preset { min-height:77px; border:1px solid var(--stroke); background:var(--panel); color:var(--text); border-radius:16px; transition:background .1s,border-color .1s; }
   .preset.active { background:#443a2f; border:2px solid var(--accent); }
   .preset-label { display:block; font-size:13px; color:var(--muted); font-weight:600; }
   .preset.active .preset-label { color:#f6d6a0; }
   .preset-num { display:block; font-size:30px; font-weight:760; font-variant-numeric:tabular-nums; line-height:1.15; }
+  .preset-num small { font-size:12px; }
   .start { min-height:76px; width:100%; margin-top:18px; border:0; border-radius:19px; color:#142630; background:var(--accent); box-shadow:0 8px 22px #0003; font-size:24px; font-weight:780; }
   .start.playing { background:#e4dcd0; }
   .start:active,.preset:active { transform:scale(.99); }
@@ -46,263 +48,328 @@
   .auto-heading { font-size:17px; font-weight:700; }
   .auto-sub { color:var(--muted); font-size:13px; margin-top:2px; }
   .switch { position:relative; display:inline-flex; align-items:center; flex-shrink:0; }
-  .switch input { position:absolute; opacity:0; width:50px; height:34px; }
+  .switch input { position:absolute; opacity:0; width:55px; height:36px; }
   .slider { width:55px; height:33px; background:#455760; border-radius:20px; position:relative; transition:background .15s; }
   .slider:after { content:""; position:absolute; top:3px; left:3px; width:27px; height:27px; border-radius:50%; background:#fff; transition:transform .15s; }
-  .switch input:checked + .slider { background:#d3a058; }
-  .switch input:checked + .slider:after { transform:translateX(22px); }
-  .switch input:focus-visible + .slider { outline:3px solid white; }
-  .timing { display:flex; justify-content:space-between; align-items:center; padding-top:14px; margin-top:14px; border-top:1px solid var(--stroke); gap:10px; }
-  .timing label { color:var(--muted); font-size:14px; }
-  .timing select, .sound-row select { color:var(--text); background:var(--panel2); border:1px solid #49606b; padding:9px 12px; border-radius:10px; }
-  .countdown { display:flex; align-items:center; justify-content:space-between; gap:10px; margin-top:13px; color:var(--muted); font-size:13px; }
-  .countdown strong { font-variant-numeric:tabular-nums; font-size:18px; color:var(--accent); }
+  .switch input:checked+.slider { background:#d3a058; }
+  .switch input:checked+.slider:after { transform:translateX(22px); }
+  .switch input:focus-visible+.slider { outline:3px solid white; }
   details { margin-top:17px; border-top:1px solid var(--stroke); padding-top:15px; }
   summary { color:var(--muted); font-size:14px; cursor:pointer; list-style-position:inside; }
-  .settings { display:grid; gap:14px; margin-top:14px; padding-bottom:10px; }
+  .settings { display:grid; gap:14px; margin-top:16px; padding-bottom:10px; }
   .setting-label { display:flex; align-items:center; justify-content:space-between; gap:10px; color:var(--muted); font-size:14px; }
   .number-control { display:flex; align-items:center; gap:6px; }
-  .number-control button { color:var(--text); background:var(--panel2); border:1px solid var(--stroke); border-radius:9px; width:36px; height:36px; font-size:21px; }
-  .number-control input { background:var(--panel2); border:1px solid var(--stroke); color:var(--text); border-radius:9px; width:58px; height:36px; text-align:center; font-variant-numeric:tabular-nums; font-size:18px; }
+  .number-control button { color:var(--text); background:var(--panel2); border:1px solid var(--stroke); border-radius:9px; width:36px; height:38px; font-size:21px; }
+  .number-control input { background:var(--panel2); border:1px solid var(--stroke); color:var(--text); border-radius:9px; width:64px; height:38px; text-align:center; font-variant-numeric:tabular-nums; font-size:18px; }
+  .interval-control input { width:66px; }
   input[type=number]::-webkit-inner-spin-button { -webkit-appearance:none; }
-  .sound-row { display:flex; align-items:center; gap:9px; justify-content:space-between; }
+  .group-title { color:#e6c68e; font-size:12px; font-weight:720; letter-spacing:.13em; text-transform:uppercase; padding-top:8px; border-top:1px solid var(--stroke); }
+  .sound-row { display:flex; align-items:center; gap:9px; justify-content:space-between; color:var(--muted); font-size:14px; }
+  .sound-row select { color:var(--text); background:var(--panel2); border:1px solid #49606b; padding:9px 12px; border-radius:10px; min-width:154px; max-width:57%; font-size:15px; }
   .volume { display:flex; align-items:center; gap:13px; }
-  .volume input { width:70%; accent-color:var(--accent); }
-  .small-note { margin:4px 0 0; color:var(--muted); font-size:12px; line-height:1.5; }
-  footer { text-align:center; color:#77919a; font-size:11px; margin-top:auto; padding-top:22px; }
-  @media(max-height:780px) { .dial { width:190px; height:190px; margin:18px auto; } .tempo { font-size:75px; } }
-  @media (prefers-reduced-motion:reduce) { .dial.hit { animation:none; } }
+  .volume input { width:100%; accent-color:var(--accent); }
+  .small-note { margin:0; color:var(--muted); font-size:12px; line-height:1.55; }
+  .tip { font-size:12px; color:#93abb2; padding-top:2px; }
+  .volume-label { color:var(--text); font-variant-numeric:tabular-nums; }
+  footer { text-align:center; color:#77919a; font-size:11px; margin-top:auto; padding-top:20px; }
+  @media(max-height:780px) { .dial { width:190px; height:190px; margin:18px auto; } .seconds { font-size:77px; } }
+  @media(max-width:355px) { main { padding-left:14px; padding-right:14px; } .sound-row { gap:6px; } }
+  @media(prefers-reduced-motion:reduce) { .dial.hit { animation:none; } }
 </style>
 </head>
 <body>
-  <main>
-    <header>
-      <div class="eyebrow">Olsens rotræning</div>
-      <h1>Rometronom</h1>
-      <p class="tagline">Din rytme. Dit tempo.</p>
-    </header>
-    <div class="dial" id="dial" aria-live="off"><div class="readout"><div class="tempo" id="tempo">21</div><div class="bpm">slag pr. minut</div></div></div>
-    <section aria-label="To forudindstillede tempi">
-      <h2 class="preset-title">Vælg tempo</h2>
-      <div class="presets">
-        <button class="preset active" id="preset0" type="button" aria-pressed="true"><span class="preset-label">ROLIGT</span><span class="preset-num"><span id="label0">21</span> <small style="font-size:12px">BPM</small></span></button>
-        <button class="preset" id="preset1" type="button" aria-pressed="false"><span class="preset-label">HURTIGT</span><span class="preset-num"><span id="label1">42</span> <small style="font-size:12px">BPM</small></span></button>
-      </div>
-    </section>
-    <button class="start" id="start" type="button" aria-label="Start metronom">▶ Start</button>
-    <section class="auto-panel" aria-label="Automatisk temposkift">
-      <div class="auto-row">
-        <div><div class="auto-heading">Automatisk skift</div><div class="auto-sub">Skifter mellem de to tempi</div></div>
-        <label class="switch" aria-label="Automatisk skift til eller fra"><input type="checkbox" id="auto"><span class="slider"></span></label>
-      </div>
-      <div class="timing" id="timing" hidden>
-        <label for="duration">Skift hvert</label>
-        <select id="duration"><option value="15">15 sekunder</option><option value="30">30 sekunder</option><option value="60" selected>1 minut</option><option value="90">1½ minut</option><option value="120">2 minutter</option><option value="180">3 minutter</option><option value="300">5 minutter</option></select>
-      </div>
-      <div class="countdown" id="countdown" hidden><span id="nextLabel">Næste: 42 BPM</span><strong id="remaining">01:00</strong></div>
-    </section>
-    <details><summary>Indstillinger for lyd og tempo</summary>
-      <div class="settings">
-        <div class="setting-label"><label for="value0">Roligt tempo (BPM)</label><div class="number-control"><button type="button" data-change="0:-1" aria-label="Sænk roligt tempo">−</button><input id="value0" type="number" inputmode="numeric" min="10" max="240" value="21"><button type="button" data-change="0:1" aria-label="Hæv roligt tempo">+</button></div></div>
-        <div class="setting-label"><label for="value1">Hurtigt tempo (BPM)</label><div class="number-control"><button type="button" data-change="1:-1" aria-label="Sænk hurtigt tempo">−</button><input id="value1" type="number" inputmode="numeric" min="10" max="240" value="42"><button type="button" data-change="1:1" aria-label="Hæv hurtigt tempo">+</button></div></div>
-        <div class="sound-row"><label for="sound">Metronomlyd</label><select id="sound"><option value="wood">Varmt træklik</option><option value="classic">Klassisk tik-tak</option><option value="soft">Ekstra blød</option></select></div>
-        <div class="setting-label"><label for="volume">Lydstyrke</label><span id="volumeLabel">55 %</span></div>
-        <div class="volume"><span aria-hidden="true">🔈</span><input id="volume" type="range" min="0" max="100" value="55" step="5" aria-label="Lydstyrke"><span aria-hidden="true">🔊</span></div>
-        <p class="small-note">Tryk Start for at aktivere lyden på iPhone. Denne webversion er beregnet til brug med tændt skærm; lyd med låst skærm kræver en egentlig iOS-app.</p>
-      </div>
-    </details>
-    <footer>Designet til en enkel rytme på romaskinen</footer>
-  </main>
+<main>
+  <header>
+    <div class="eyebrow">Olsens rotræning</div>
+    <h1>Ro-Metronom</h1>
+    <p class="tagline">Din rytme. Dit tempo.</p>
+  </header>
+  <div class="dial" id="dial" aria-label="Nedtælling til næste temposkift">
+    <div class="readout">
+      <div class="seconds" id="seconds">—</div>
+      <div class="seconds-caption" id="secondsCaption">Manuelt tempo</div>
+    </div>
+  </div>
+  <section aria-label="To forudindstillede tempi">
+    <h2 class="preset-title">Vælg tempo</h2>
+    <div class="presets">
+      <button class="preset active" id="preset0" type="button" aria-pressed="true"><span class="preset-label">ROLIGT</span><span class="preset-num"><span id="label0">21</span> <small>BPM</small></span></button>
+      <button class="preset" id="preset1" type="button" aria-pressed="false"><span class="preset-label">HURTIGT</span><span class="preset-num"><span id="label1">42</span> <small>BPM</small></span></button>
+    </div>
+  </section>
+  <button class="start" id="start" type="button" aria-label="Start metronom">▶ Start</button>
+  <section class="auto-panel" aria-label="Automatisk temposkift">
+    <div class="auto-row">
+      <div><div class="auto-heading">Automatisk skift</div><div class="auto-sub" id="autoDescription">Skifter mellem de to tempi</div></div>
+      <label class="switch" aria-label="Slå automatisk temposkift til eller fra"><input type="checkbox" id="auto"><span class="slider"></span></label>
+    </div>
+  </section>
+  <details id="settings"><summary>Indstillinger for lyd og tempo</summary>
+    <div class="settings">
+      <div class="group-title">Tempo</div>
+      <div class="setting-label"><label for="value0">Roligt tempo (BPM)</label><div class="number-control"><button type="button" data-change="tempo:0:-1" aria-label="Sænk roligt tempo">−</button><input id="value0" type="number" inputmode="numeric" min="10" max="240" value="21"><button type="button" data-change="tempo:0:1" aria-label="Hæv roligt tempo">+</button></div></div>
+      <div class="setting-label"><label for="value1">Hurtigt tempo (BPM)</label><div class="number-control"><button type="button" data-change="tempo:1:-1" aria-label="Sænk hurtigt tempo">−</button><input id="value1" type="number" inputmode="numeric" min="10" max="240" value="42"><button type="button" data-change="tempo:1:1" aria-label="Hæv hurtigt tempo">+</button></div></div>
+      <div class="group-title">Tid på hvert tempo</div>
+      <div class="setting-label"><label for="duration0">Roligt tempo (sek.)</label><div class="number-control interval-control"><button type="button" data-change="duration:0:-5" aria-label="Kortere roligt interval">−</button><input id="duration0" type="number" inputmode="numeric" min="10" max="900" step="5" value="60"><button type="button" data-change="duration:0:5" aria-label="Længere roligt interval">+</button></div></div>
+      <div class="setting-label"><label for="duration1">Hurtigt tempo (sek.)</label><div class="number-control interval-control"><button type="button" data-change="duration:1:-5" aria-label="Kortere hurtigt interval">−</button><input id="duration1" type="number" inputmode="numeric" min="10" max="900" step="5" value="60"><button type="button" data-change="duration:1:5" aria-label="Længere hurtigt interval">+</button></div></div>
+      <p class="small-note">Tiden regnes fra hvert temposkift. Ved manuel ændring starter nedtællingen forfra.</p>
+      <div class="group-title">Lyd</div>
+      <div class="sound-row"><label for="sound">Metronomlyd</label><select id="sound"><option value="wood">Varmt træklik</option><option value="classic">Klassisk tik-tak</option><option value="soft">Ekstra blød</option></select></div>
+      <div class="sound-row"><label for="warning">Sidste tre slag</label><select id="warning"><option value="bell">Blød klokkelyd</option><option value="rising">Lysere klik</option><option value="echo">Lille ekko</option><option value="off">Ingen advarsel</option></select></div>
+      <div class="setting-label"><label for="volume">Lydstyrke</label><span class="volume-label" id="volumeLabel">80 %</span></div>
+      <div class="volume"><span aria-hidden="true">🔈</span><input id="volume" type="range" min="0" max="100" value="80" step="5" aria-label="Lydstyrke"><span aria-hidden="true">🔊</span></div>
+      <p class="tip">Lyden er forstærket i denne version. Start gerne med moderat lydstyrke, især med høretelefoner.</p>
+      <p class="small-note">Webappen er til brug med tændt skærm. iPhone kan stoppe lyden, når skærmen låses. Rigtig baggrundslyd kræver vores iOS-app.</p>
+    </div>
+  </details>
+  <footer>Ro-Metronom · Webversion 2.0</footer>
+</main>
 <script>
 (() => {
   'use strict';
   const $ = id => document.getElementById(id);
-  const state = { presets:[21,42], selected:0, auto:false, duration:60, sound:'wood', volume:55, playing:false, ctx:null, nextTime:0, stageStart:0, stageEnd:0, beat:0, timer:null, frame:null, wake:null, noise:null };
+  const clamp = (n, min, max) => Math.min(max, Math.max(min, n));
+  const clampInt = (value, fallback, min, max) => Number.isFinite(Number(value)) && String(value).trim() !== '' ? clamp(Math.round(Number(value)),min,max) : fallback;
+  const defaults = {presets:[21,42],durations:[60,60],selected:0,auto:false,sound:'wood',warning:'bell',volume:80};
+  const state = {...defaults, presets:[...defaults.presets],durations:[...defaults.durations],playing:false,ctx:null,noise:null,master:null,nextTime:0,stageStart:0,stageEnd:0,beat:0,timer:null,frame:null,wake:null,generation:0,flashes:[]};
   try {
-    const saved = JSON.parse(localStorage.getItem('olsen-rometronom-v1') || '{}');
-    if (Array.isArray(saved.presets) && saved.presets.length===2) state.presets=saved.presets.map(x=>Math.min(240,Math.max(10,Number(x)||21)));
-    if (saved.selected === 0 || saved.selected === 1) state.selected=saved.selected;
+    const old = JSON.parse(localStorage.getItem('olsen-rometronom-v1') || '{}');
+    const saved = JSON.parse(localStorage.getItem('olsen-rometronom-v2') || 'null') || old;
+    if (Array.isArray(saved.presets) && saved.presets.length===2) state.presets=saved.presets.map((v,i)=>clampInt(v,defaults.presets[i],10,240));
+    if (Array.isArray(saved.durations) && saved.durations.length===2) state.durations=saved.durations.map((v,i)=>clampInt(v,defaults.durations[i],10,900));
+    else if (saved.duration!==undefined) state.durations=[clampInt(saved.duration,60,10,900),clampInt(saved.duration,60,10,900)];
+    if (saved.selected===0 || saved.selected===1) state.selected=saved.selected;
     if (typeof saved.auto==='boolean') state.auto=saved.auto;
-    if ([15,30,60,90,120,180,300].includes(Number(saved.duration))) state.duration=Number(saved.duration);
     if (['wood','classic','soft'].includes(saved.sound)) state.sound=saved.sound;
-    if (Number.isFinite(saved.volume)) state.volume=Math.min(100,Math.max(0,saved.volume));
+    if (['off','rising','echo','bell'].includes(saved.warning)) state.warning=saved.warning;
+    if (Number.isFinite(Number(saved.volume))) state.volume=clamp(Number(saved.volume),0,100);
   } catch (_) {}
-  function save() {
-    try { localStorage.setItem('olsen-rometronom-v1', JSON.stringify({presets:state.presets,selected:state.selected,auto:state.auto,duration:state.duration,sound:state.sound,volume:state.volume})); } catch (_) {}
+  const save=()=>{try {localStorage.setItem('olsen-rometronom-v2',JSON.stringify({presets:state.presets,durations:state.durations,selected:state.selected,auto:state.auto,sound:state.sound,warning:state.warning,volume:state.volume}));} catch(_) {}};
+
+  function updateDial() {
+    let secondsText='—', caption='Manuelt tempo', progress=0;
+    if (state.auto) {
+      const interval=state.durations[state.selected];
+      const remaining=state.playing && state.ctx ? clamp(state.stageEnd-state.ctx.currentTime,0,interval) : interval;
+      secondsText=String(Math.ceil(remaining));
+      caption=state.playing?'Sek. til skift':'Sek. ved start';
+      progress=state.playing?clamp(remaining/interval,0,1):1;
+    }
+    if ($('seconds').textContent!==secondsText) $('seconds').textContent=secondsText;
+    $('secondsCaption').textContent=caption;
+    $('seconds').classList.toggle('muted',!state.auto);
+    $('dial').style.setProperty('--sweep',Math.round(progress*360)+'deg');
+    $('dial').setAttribute('aria-label',state.auto?`${secondsText} sekunder til temposkift`:'Manuelt temposkift');
   }
   function paint() {
-    $('tempo').textContent=state.presets[state.selected];
     [0,1].forEach(i=>{
       $('label'+i).textContent=state.presets[i];
       $('value'+i).value=state.presets[i];
+      $('duration'+i).value=state.durations[i];
       $('preset'+i).classList.toggle('active',i===state.selected);
       $('preset'+i).setAttribute('aria-pressed',String(i===state.selected));
     });
     $('auto').checked=state.auto;
-    $('timing').hidden=!state.auto;
-    $('countdown').hidden=!state.auto || !state.playing;
-    $('duration').value=String(state.duration);
+    $('autoDescription').textContent=state.auto?'Tiderne indstilles nedenfor':'Skifter mellem de to tempi';
     $('sound').value=state.sound;
+    $('warning').value=state.warning;
     $('volume').value=state.volume;
     $('volumeLabel').textContent=state.volume+' %';
     $('start').textContent=state.playing?'■ Stop':'▶ Start';
     $('start').classList.toggle('playing',state.playing);
     $('start').setAttribute('aria-label',state.playing?'Stop metronom':'Start metronom');
-    updateCountdown();
+    updateDial();
+  }
+  function resetStage() {
+    if (!state.ctx) return;
+    state.generation++;
+    for(const id of state.flashes) clearTimeout(id);
+    state.flashes=[];
+    state.nextTime=state.ctx.currentTime+.065;
+    state.stageStart=state.nextTime;
+    state.stageEnd=state.stageStart+state.durations[state.selected];
+    state.beat=0;
   }
   function setPreset(i) {
-    state.selected=i;
-    if (state.playing && state.ctx) restartBeat();
-    save(); paint();
-  }
-  function setTempo(i, val) {
-    const n=Number(val);
-    if (!Number.isFinite(n)) return;
-    state.presets[i]=Math.max(10,Math.min(240,Math.round(n)));
-    if (state.playing && state.selected===i) restartBeat();
-    save(); paint();
-  }
-  function makeNoiseBuffer(ctx) {
-    const len=Math.ceil(ctx.sampleRate*.085);
-    const buf=ctx.createBuffer(1,len,ctx.sampleRate); const data=buf.getChannelData(0);
-    for(let j=0;j<len;j++) data[j]=(Math.random()*2-1);
-    return buf;
-  }
-  function clickAt(time, accent=false) {
-    const ctx=state.ctx;
-    if(!ctx) return;
-    const kind=state.sound;
-    const strength=(state.volume/100) * (accent?1.04:0.78);
-    if (strength<=0) return;
-    const tones=kind==='classic'?[1020,760]:kind==='soft'?[490,370]:[670,470];
-    const hz=tones[accent?0:1];
-    const osc=ctx.createOscillator();
-    const gain=ctx.createGain();
-    osc.type=kind==='soft'?'sine':'triangle';
-    osc.frequency.setValueAtTime(hz,time);
-    osc.frequency.exponentialRampToValueAtTime(hz*.67,time+.045);
-    gain.gain.setValueAtTime(.0001,time);
-    gain.gain.exponentialRampToValueAtTime(Math.max(.0002,strength*(kind==='soft'?.11:.19)),time+.003);
-    gain.gain.exponentialRampToValueAtTime(.0001,time+(kind==='soft'?.078:.058));
-    osc.connect(gain).connect(ctx.destination);
-    osc.start(time); osc.stop(time+.085);
-    // A short, filtered mechanical tap makes the sound less electronic.
-    const noise=ctx.createBufferSource(); noise.buffer=state.noise;
-    const filter=ctx.createBiquadFilter(); filter.type=kind==='soft'?'lowpass':'bandpass';
-    filter.frequency.value=kind==='classic'?3200:kind==='soft'?1300:1900;
-    filter.Q.value=.65;
-    const ng=ctx.createGain();
-    ng.gain.setValueAtTime(.0001,time);
-    ng.gain.exponentialRampToValueAtTime(Math.max(.0002,strength*(kind==='soft'?.055:.15)),time+.002);
-    ng.gain.exponentialRampToValueAtTime(.0001,time+.027);
-    noise.connect(filter).connect(ng).connect(ctx.destination);
-    noise.start(time); noise.stop(time+.035);
-  }
-  function visualBeat(time) {
-    const delay=Math.max(0,(time-state.ctx.currentTime)*1000);
-    setTimeout(()=>{
-      if(!state.playing) return;
-      const d=$('dial'); d.classList.remove('hit'); void d.offsetWidth; d.classList.add('hit');
-    },delay);
-  }
-  function scheduler() {
-    if (!state.playing || !state.ctx) return;
-    const ctx=state.ctx;
-    if(ctx.state==='suspended') return;
-    while(state.nextTime < ctx.currentTime+.13) {
-      if (state.auto && state.nextTime >= state.stageEnd-.00001) {
-        state.selected=1-state.selected;
-        state.stageStart=state.stageEnd;
-        state.stageEnd=state.stageStart+state.duration;
-        state.nextTime=state.stageStart;
-        state.beat=0;
-        paint(); save();
-      }
-      clickAt(state.nextTime,state.beat===0);
-      visualBeat(state.nextTime);
-      state.beat++;
-      state.nextTime+=60/state.presets[state.selected];
-      // Catch up safely if a web browser resumes after suspension.
-      if(state.nextTime < ctx.currentTime-.25) {
-        state.nextTime=ctx.currentTime+.04;
-        if (state.auto) { state.stageStart=state.nextTime; state.stageEnd=state.nextTime+state.duration; }
-        state.beat=0;
-      }
+    if(i!==state.selected) {
+      state.selected=i;
+      if(state.playing) resetStage();
+      save(); paint();
     }
   }
-  function restartBeat() {
-    if(!state.ctx)return;
-    state.nextTime=state.ctx.currentTime+.055;
-    state.stageStart=state.nextTime;
-    state.stageEnd=state.stageStart+state.duration;
-    state.beat=0;
+  function setValue(type,i,v) {
+    const list=type==='tempo'?state.presets:state.durations;
+    const fallback=list[i];
+    const next=clampInt(v,fallback,type==='tempo'?10:10,type==='tempo'?240:900);
+    if(list[i]!==next) {
+      list[i]=next;
+      if(state.playing && state.selected===i) resetStage();
+    }
+    save();paint();
+  }
+  function createNoise(ctx) {
+    const buf=ctx.createBuffer(1,Math.ceil(ctx.sampleRate*.12),ctx.sampleRate);
+    const a=buf.getChannelData(0);
+    for(let i=0;i<a.length;i++) a[i]=Math.random()*2-1;
+    return buf;
+  }
+  function env(gain,t,amplitude,attack,release) {
+    const g=gain.gain;
+    g.setValueAtTime(.00001,t);
+    g.exponentialRampToValueAtTime(Math.max(.0001,amplitude),t+attack);
+    g.exponentialRampToValueAtTime(.00001,t+release);
+  }
+  function tap(t, opts={}) {
+    const ctx=state.ctx;
+    if(!ctx || !state.master || !state.volume) return;
+    const kind=state.sound;
+    const scale=state.volume/100 * (opts.scale||1);
+    const pitch=opts.pitch||1;
+    const freq=kind==='classic'?950:kind==='soft'?540:690;
+    const tonal=ctx.createOscillator(); const tg=ctx.createGain();
+    tonal.type=kind==='soft'?'sine':'triangle';
+    tonal.frequency.setValueAtTime(freq*pitch,t);
+    tonal.frequency.exponentialRampToValueAtTime(freq*.59*pitch,t+.072);
+    env(tg,t,scale*(kind==='soft'?.40:.56),.0025,kind==='soft'?.120:.084);
+    tonal.connect(tg).connect(state.master);
+    tonal.start(t);tonal.stop(t+.135);
+    const body=ctx.createOscillator(), bg=ctx.createGain();
+    body.type='sine';
+    body.frequency.setValueAtTime((kind==='classic'?460:330)*pitch,t);
+    body.frequency.exponentialRampToValueAtTime((kind==='classic'?330:210)*pitch,t+.11);
+    env(bg,t,scale*(kind==='soft'?.20:.25),.004,.13);
+    body.connect(bg).connect(state.master);
+    body.start(t);body.stop(t+.14);
+    const n=ctx.createBufferSource(),filter=ctx.createBiquadFilter(),ng=ctx.createGain();
+    n.buffer=state.noise;
+    filter.type=kind==='soft'?'lowpass':'bandpass';
+    filter.frequency.value=kind==='classic'?3000:kind==='soft'?1400:2000;
+    filter.Q.value=.65;
+    env(ng,t,scale*(kind==='soft'?.16:.34),.002,.04);
+    n.connect(filter).connect(ng).connect(state.master);
+    n.start(t);n.stop(t+.05);
+  }
+  function bell(t,order) {
+    const ctx=state.ctx;
+    if(!ctx || !state.master || !state.volume) return;
+    const fundamental=[850,1010,1200][clamp(order-1,0,2)];
+    const vol=state.volume/100;
+    [1,2,3].forEach((mult,i)=>{
+      const osc=ctx.createOscillator(),gain=ctx.createGain();
+      osc.type='sine';osc.frequency.value=fundamental*mult;
+      env(gain,t,vol*[.16,.065,.018][i],.006,.34-i*.05);
+      osc.connect(gain).connect(state.master);
+      osc.start(t);osc.stop(t+.36);
+    });
+  }
+  function playClick(t, lastThreeOrder) {
+    if(lastThreeOrder && state.warning==='rising') tap(t,{pitch:1+lastThreeOrder*.17,scale:1.05});
+    else if(lastThreeOrder && state.warning==='echo') {tap(t);tap(t+.13,{scale:.28,pitch:.90});}
+    else if(lastThreeOrder && state.warning==='bell') {tap(t);bell(t+.014,lastThreeOrder);}
+    else tap(t);
+  }
+  function flashAt(t) {
+    const token=state.generation;
+    const delay=Math.max(0,(t-state.ctx.currentTime)*1000);
+    const id=setTimeout(()=>{
+      state.flashes=state.flashes.filter(x=>x!==id);
+      if(!state.playing || token!==state.generation) return;
+      const d=$('dial');d.classList.remove('hit');void d.offsetWidth;d.classList.add('hit');
+    },delay);
+    state.flashes.push(id);
+  }
+  // Returns 1,2,3 on precisely the final three clicks before a tempo change.
+  function warningIndex(t,period,end) {
+    const subsequentBeats=Math.max(0,Math.ceil((end-t)/period-1e-8)-1);
+    return subsequentBeats<3 ? 3-subsequentBeats : 0;
+  }
+  function scheduler() {
+    if(!state.playing || !state.ctx || state.ctx.state!=='running') return;
+    const now=state.ctx.currentTime;
+    // A WebKit browser may suspend a webapp; do not unleash a backlog of old ticks.
+    if(state.nextTime<now-.20) resetStage();
+    let count=0;
+    while(state.nextTime<now+.105 && count++<12) {
+      if(state.auto && state.nextTime>=state.stageEnd-.00001) {
+        state.selected=1-state.selected;
+        state.stageStart=state.stageEnd;
+        state.stageEnd=state.stageStart+state.durations[state.selected];
+        state.nextTime=state.stageStart;
+        state.beat=0;
+        save();paint();
+      }
+      const period=60/state.presets[state.selected];
+      const order=state.auto?warningIndex(state.nextTime,period,state.stageEnd):0;
+      playClick(state.nextTime,order);
+      flashAt(state.nextTime);
+      state.beat++;
+      state.nextTime+=period;
+      // Switch on the interval boundary even if it falls between two beats.
+      if(state.auto && state.nextTime>state.stageEnd)state.nextTime=state.stageEnd;
+    }
   }
   async function start() {
     try {
       const Ctx=window.AudioContext||window.webkitAudioContext;
-      if(!Ctx) throw Error('Lyd er ikke understøttet i denne browser.');
-      if(!state.ctx) { state.ctx=new Ctx(); state.noise=makeNoiseBuffer(state.ctx); }
-      await state.ctx.resume();
-      state.playing=true;
-      restartBeat();
-      scheduler();
-      state.timer=setInterval(scheduler,25);
-      paint();
-      if ('wakeLock' in navigator) {
-        try { state.wake=await navigator.wakeLock.request('screen'); } catch (_) {}
+      if(!Ctx) throw new Error('Denne browser understøtter ikke Web Audio.');
+      if(!state.ctx) {
+        state.ctx=new Ctx();state.noise=createNoise(state.ctx);
+        const compressor=state.ctx.createDynamicsCompressor();
+        compressor.threshold.value=-10;
+        compressor.knee.value=14;
+        compressor.ratio.value=4;
+        compressor.attack.value=.002;
+        compressor.release.value=.12;
+        state.master=state.ctx.createGain();
+        state.master.gain.value=1.20;
+        state.master.connect(compressor).connect(state.ctx.destination);
       }
-    } catch(err) { state.playing=false; paint(); alert('Lyden kunne ikke startes: '+err.message); }
+      await state.ctx.resume();
+      if(state.ctx.state!=='running') throw new Error('Lyden er midlertidigt sat på pause af iPhone.');
+      state.playing=true;
+      resetStage();scheduler();
+      state.timer=setInterval(scheduler,25);
+      paint();frame();
+      if('wakeLock' in navigator) {
+        try {state.wake=await navigator.wakeLock.request('screen');} catch(_) {}
+      }
+    } catch(err) {stop();alert('Lyden kunne ikke startes: '+err.message);}
   }
   function stop() {
-    state.playing=false;
-    if(state.timer) clearInterval(state.timer);
-    state.timer=null;
-    if(state.frame) cancelAnimationFrame(state.frame);
-    state.frame=null;
-    if(state.wake){state.wake.release().catch(()=>{});state.wake=null;}
+    state.playing=false;state.generation++;
+    clearInterval(state.timer);state.timer=null;
+    if(state.frame) cancelAnimationFrame(state.frame);state.frame=null;
+    for(const id of state.flashes) clearTimeout(id);state.flashes=[];
+    if(state.wake) {state.wake.release().catch(()=>{});state.wake=null;}
     paint();
   }
-  function updateCountdown() {
-    if(!state.playing || !state.auto || !state.ctx) return;
-    const secs=Math.max(0,Math.ceil(state.stageEnd-state.ctx.currentTime));
-    $('remaining').textContent=String(Math.floor(secs/60)).padStart(2,'0')+':'+String(secs%60).padStart(2,'0');
-    $('nextLabel').textContent='Næste: '+state.presets[1-state.selected]+' BPM';
-  }
-  function frame() {
-    if(!state.playing) return;
-    updateCountdown();
-    state.frame=requestAnimationFrame(frame);
-  }
+  function frame() {if(!state.playing)return;updateDial();state.frame=requestAnimationFrame(frame);}
   $('preset0').addEventListener('click',()=>setPreset(0));
   $('preset1').addEventListener('click',()=>setPreset(1));
-  $('start').addEventListener('click',async()=>{
-    if(state.playing)stop(); else { await start(); if(state.playing) frame(); }
-  });
+  $('start').addEventListener('click',()=>{if(state.playing)stop();else start();});
   $('auto').addEventListener('change',e=>{
     state.auto=e.target.checked;
-    if(state.playing && state.ctx){ state.stageStart=state.ctx.currentTime; state.stageEnd=state.stageStart+state.duration; }
+    if(state.playing)resetStage();
     save();paint();
   });
-  $('duration').addEventListener('change',e=>{
-    state.duration=Number(e.target.value);
-    if(state.playing && state.ctx){state.stageStart=state.ctx.currentTime;state.stageEnd=state.stageStart+state.duration;}
-    save();paint();
-  });
-  [0,1].forEach(i=>$('value'+i).addEventListener('change',e=>setTempo(i,e.target.value)));
+  for(let i=0;i<2;i++) {
+    $('value'+i).addEventListener('change',e=>setValue('tempo',i,e.target.value));
+    $('duration'+i).addEventListener('change',e=>setValue('duration',i,e.target.value));
+  }
   document.querySelectorAll('[data-change]').forEach(btn=>btn.addEventListener('click',()=>{
-    const [i,step]=btn.dataset.change.split(':').map(Number);
-    setTempo(i,state.presets[i]+step);
+    const [type,index,step]=btn.dataset.change.split(':');
+    const values=type==='tempo'?state.presets:state.durations;
+    setValue(type,Number(index),values[Number(index)]+Number(step));
   }));
   $('sound').addEventListener('change',e=>{state.sound=e.target.value;save();});
+  $('warning').addEventListener('change',e=>{state.warning=e.target.value;save();});
   $('volume').addEventListener('input',e=>{state.volume=Number(e.target.value);$('volumeLabel').textContent=state.volume+' %';save();});
   document.addEventListener('visibilitychange',()=>{
     if(!document.hidden && state.playing && state.ctx && state.ctx.state==='suspended') {
-      state.ctx.resume().then(()=>restartBeat()).catch(()=>{});
+      state.ctx.resume().then(()=>resetStage()).catch(()=>{});
     }
   });
-  if('serviceWorker' in navigator && /^https:/.test(location.protocol)) {
-    navigator.serviceWorker.register('sw.js').catch(()=>{});
-  }
+  if('serviceWorker' in navigator && location.protocol==='https:')navigator.serviceWorker.register('sw.js').catch(()=>{});
   paint();
 })();
 </script>
