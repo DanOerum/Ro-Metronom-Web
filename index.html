@@ -6,11 +6,11 @@
   <meta name="theme-color" content="#0f2029">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-  <meta name="apple-mobile-web-app-title" content="Ro-Metronom">
-  <meta name="description" content="Ro-Metronom med to rytmer, individuelt indstillede intervaller og blid lydadvarsel før skift.">
+  <meta name="apple-mobile-web-app-title" content="Ro-Rytme">
+  <meta name="description" content="Ro-Rytme med fire lydfaser pr. rotag, tre rytmetyper, startbip og automatisk temposkift.">
   <link rel="manifest" href="manifest.webmanifest">
   <link rel="apple-touch-icon" href="icon-192.png">
-  <title>Ro-Metronom · Olsen</title>
+  <title>Ro-Rytme · Olsen</title>
 <style>
   :root { color-scheme:dark; --bg:#0e1d25; --panel:#192b35; --panel2:#20343e; --accent:#eab968; --text:#f4f4ef; --muted:#a7bbc2; --stroke:#334953; }
   *, *:before, *:after { box-sizing:border-box; }
@@ -38,6 +38,18 @@
   .time-readout { margin:11px auto 17px; min-height:18px; font-size:12px; text-align:center; color:#b8c4c5; font-variant-numeric:tabular-nums; letter-spacing:.035em; }
   .time-readout.hidden { visibility:hidden; }
   .time-readout .time-dot { display:inline-block; width:5px; height:5px; border-radius:50%; margin-right:6px; vertical-align:2px; background:#d7ad77; opacity:.88; }
+  .stroke-marker { width:148px; height:18px; margin:-6px auto 12px; display:grid; place-items:center; opacity:.88; }
+  .stroke-track { position:relative; width:128px; height:1px; background:linear-gradient(to right,transparent,#7c827d 20%,#8b9a97 50%,#7c827d 80%,transparent); }
+  .stroke-dot { position:absolute; top:50%; left:0; width:7px; height:7px; border-radius:50%; background:#e8bd80; box-shadow:0 0 7px #e8bd8066; transform:translate(-50%,-50%); will-change:left; }
+  .phase-overview { display:flex; height:23px; border:1px solid #52646b; overflow:hidden; border-radius:8px; background:var(--panel2); margin-top:-4px; }
+  .phase-overview > div { min-width:0; height:100%; position:relative; overflow:hidden; border-right:1px solid #12242a; }
+  .phase-overview > div:last-child { border-right:0; }
+  .phase-overview > div span { display:block; white-space:nowrap; color:#17282f; text-align:center; font-size:10px; font-weight:750; line-height:22px; }
+  .quiet-button { width:100%; padding:9px 11px; background:var(--panel2); color:#ead3a8; border:1px solid #52646b; border-radius:10px; font-size:13px; }
+  #customPhases { display:grid; gap:10px; }
+  #customPhases[hidden] { display:none; }
+  .cue-select { min-width:145px !important; }
+  .phase-note { color:#c5bfad; }
   .preset-title { margin:0 0 10px; color:var(--muted); font-size:12px; font-weight:650; text-transform:uppercase; letter-spacing:.14em; }
   .presets { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
   .preset { min-height:77px; border:1px solid var(--stroke); background:var(--panel); color:var(--text); border-radius:16px; transition:background .1s,border-color .1s; }
@@ -80,17 +92,17 @@
   footer { text-align:center; color:#77919a; font-size:11px; margin-top:auto; padding-top:20px; }
   @media(max-height:780px) { .dial { width:190px; height:190px; margin-top:17px; } .progress-ring { inset:-10px; width:210px; height:210px; } .time-readout { margin:9px auto 12px; } }
   @media(max-width:355px) { main { padding-left:14px; padding-right:14px; } .sound-row { gap:6px; } }
-  @media(prefers-reduced-motion:reduce) { .pulse-field,.pulse-wave { will-change:auto; } }
+  @media(prefers-reduced-motion:reduce) { .pulse-field,.pulse-wave,.stroke-dot { will-change:auto; } }
 </style>
 </head>
 <body>
 <main>
   <header>
     <div class="eyebrow">Olsens rotræning</div>
-    <h1>Ro-Metronom</h1>
+    <h1>Ro-Rytme</h1>
     <p class="tagline">Din rytme. Dit tempo.</p>
   </header>
-  <div class="dial" id="dial" data-auto="false" role="img" aria-label="Rytmen vises som en blød puls ved hvert metronomslag">
+  <div class="dial" id="dial" data-auto="false" role="img" aria-label="Rorytmen vises som bløde pulser, mens en tynd ring viser tiden til temposkift">
     <svg class="progress-ring" viewBox="0 0 240 240" aria-hidden="true" focusable="false">
       <circle class="progress-track" cx="120" cy="120" r="113"></circle>
       <circle class="progress-arc" id="progressArc" cx="120" cy="120" r="113"></circle>
@@ -100,282 +112,303 @@
     <div class="pulse-seed" aria-hidden="true"></div>
   </div>
   <div class="time-readout hidden" id="timeReadout" aria-live="off"><span class="time-dot"></span><span id="countdownText">Skift om 60 s</span></div>
+  <div class="stroke-marker" id="strokeMarker" role="img" aria-label="Lille prik viser progressionen gennem hvert rotag">
+    <div class="stroke-track"><span class="stroke-dot" id="strokeDot"></span></div>
+  </div>
   <section aria-label="To forudindstillede tempi">
     <h2 class="preset-title">Vælg tempo</h2>
     <div class="presets">
-      <button class="preset active" id="preset0" type="button" aria-pressed="true"><span class="preset-label">ROLIGT</span><span class="preset-num"><span id="label0">21</span> <small>BPM</small></span></button>
-      <button class="preset" id="preset1" type="button" aria-pressed="false"><span class="preset-label">HURTIGT</span><span class="preset-num"><span id="label1">42</span> <small>BPM</small></span></button>
+      <button class="preset active" id="preset0" type="button" aria-pressed="true"><span class="preset-label">ROLIGT</span><span class="preset-num"><span id="label0">21</span> <small>rotag/min</small></span></button>
+      <button class="preset" id="preset1" type="button" aria-pressed="false"><span class="preset-label">HURTIGT</span><span class="preset-num"><span id="label1">42</span> <small>rotag/min</small></span></button>
     </div>
   </section>
-  <button class="start" id="start" type="button" aria-label="Start metronom">▶ Start</button>
+  <button class="start" id="start" type="button" aria-label="Start rorytme">▶ Start</button>
   <section class="auto-panel" aria-label="Automatisk temposkift">
     <div class="auto-row">
-      <div><div class="auto-heading">Automatisk skift</div><div class="auto-sub" id="autoDescription">Skifter mellem de to tempi</div></div>
+      <div><div class="auto-heading">Automatisk skift</div><div class="auto-sub" id="autoDescription">Skifter efter hele rotag</div></div>
       <label class="switch" aria-label="Slå automatisk temposkift til eller fra"><input type="checkbox" id="auto"><span class="slider"></span></label>
     </div>
   </section>
-  <details id="settings"><summary>Indstillinger for lyd og tempo</summary>
+  <details id="settings"><summary>Indstillinger for rytme, lyd og tempo</summary>
     <div class="settings">
       <div class="group-title">Tempo</div>
-      <div class="setting-label"><label for="value0">Roligt tempo (BPM)</label><div class="number-control"><button type="button" data-change="tempo:0:-1" aria-label="Sænk roligt tempo">−</button><input id="value0" type="number" inputmode="numeric" min="10" max="240" value="21"><button type="button" data-change="tempo:0:1" aria-label="Hæv roligt tempo">+</button></div></div>
-      <div class="setting-label"><label for="value1">Hurtigt tempo (BPM)</label><div class="number-control"><button type="button" data-change="tempo:1:-1" aria-label="Sænk hurtigt tempo">−</button><input id="value1" type="number" inputmode="numeric" min="10" max="240" value="42"><button type="button" data-change="tempo:1:1" aria-label="Hæv hurtigt tempo">+</button></div></div>
+      <div class="setting-label"><label for="value0">Roligt (rotag/min)</label><div class="number-control"><button type="button" data-change="tempo:0:-1" aria-label="Sænk roligt tempo">−</button><input id="value0" type="number" inputmode="numeric" min="10" max="240" value="21"><button type="button" data-change="tempo:0:1" aria-label="Hæv roligt tempo">+</button></div></div>
+      <div class="setting-label"><label for="value1">Hurtigt (rotag/min)</label><div class="number-control"><button type="button" data-change="tempo:1:-1" aria-label="Sænk hurtigt tempo">−</button><input id="value1" type="number" inputmode="numeric" min="10" max="240" value="42"><button type="button" data-change="tempo:1:1" aria-label="Hæv hurtigt tempo">+</button></div></div>
+      <div class="group-title">Rorytme · fire faser</div>
+      <div class="sound-row"><label for="rhythmMode">Fordeling af et rotag</label><select id="rhythmMode" aria-label="Vælg fordeling af rotaget"><option value="rhythmic">Rytmisk · 4 lige</option><option value="custom">Justerbar</option><option value="ergo">Ergometerroning</option></select></div>
+      <div class="phase-overview" id="phaseOverview" aria-label="Fordeling af rotagets fire faser"></div>
+      <p class="small-note" id="rhythmNote"></p>
+      <div id="customPhases" hidden>
+        <div class="setting-label"><label for="phase0">Indsats (%)</label><div class="number-control"><input id="phase0" type="number" min="1" max="97" step="1" inputmode="numeric"></div></div>
+        <div class="setting-label"><label for="phase1">Træk (%)</label><div class="number-control"><input id="phase1" type="number" min="1" max="97" step="1" inputmode="numeric"></div></div>
+        <div class="setting-label"><label for="phase2">Afvikling (%)</label><div class="number-control"><input id="phase2" type="number" min="1" max="97" step="1" inputmode="numeric"></div></div>
+        <div class="setting-label"><label for="phase3">Fremkørsel (%)</label><div class="number-control"><input id="phase3" type="number" min="1" max="97" step="1" inputmode="numeric"></div></div>
+        <button type="button" class="quiet-button" id="ergometerReset">Hent ergometerfordeling</button>
+        <p class="small-note">Når én fase ændres, tilpasses de øvrige automatisk til samlet 100 %. Din egen fordeling gemmes, når du skifter rytmetype.</p>
+      </div>
+      <div class="group-title">Lyd for hvert rotag</div>
+      <p class="small-note">Fire positioner i ét rotag. Vælg fremhævet DI, blødt da, klokke eller stilhed (x) for hver fase.</p>
+      <div class="sound-row"><label for="cue0">1 · Indsats</label><select id="cue0" class="cue-select"><option value="accent">DI · tydelig</option><option value="tap">da · blød</option><option value="bell">Pling</option><option value="off">x · stilhed</option></select></div>
+      <div class="sound-row"><label for="cue1">2 · Træk</label><select id="cue1" class="cue-select"><option value="accent">DI · tydelig</option><option value="tap">da · blød</option><option value="bell">Pling</option><option value="off">x · stilhed</option></select></div>
+      <div class="sound-row"><label for="cue2">3 · Afvikling</label><select id="cue2" class="cue-select"><option value="accent">DI · tydelig</option><option value="tap">da · blød</option><option value="bell">Pling</option><option value="off">x · stilhed</option></select></div>
+      <div class="sound-row"><label for="cue3">4 · Fremkørsel</label><select id="cue3" class="cue-select"><option value="accent">DI · tydelig</option><option value="tap">da · blød</option><option value="bell">Pling</option><option value="off">x · stilhed</option></select></div>
+      <p class="small-note">Ved Start høres tre korte bip. Det første DI markerer derefter første indsats, også hvis indsatsen ellers er sat til stilhed.</p>
       <div class="group-title">Tid på hvert tempo</div>
       <div class="setting-label"><label for="duration0">Roligt tempo (sek.)</label><div class="number-control interval-control"><button type="button" data-change="duration:0:-5" aria-label="Kortere roligt interval">−</button><input id="duration0" type="number" inputmode="numeric" min="10" max="900" step="5" value="60"><button type="button" data-change="duration:0:5" aria-label="Længere roligt interval">+</button></div></div>
       <div class="setting-label"><label for="duration1">Hurtigt tempo (sek.)</label><div class="number-control interval-control"><button type="button" data-change="duration:1:-5" aria-label="Kortere hurtigt interval">−</button><input id="duration1" type="number" inputmode="numeric" min="10" max="900" step="5" value="60"><button type="button" data-change="duration:1:5" aria-label="Længere hurtigt interval">+</button></div></div>
-      <p class="small-note">Tiden regnes fra hvert temposkift. Ved manuel ændring starter nedtællingen forfra.</p>
+      <p class="small-note">Tiden rundes op til et helt antal rotag, så tempoet aldrig skifter midt i et tag. Ved manuel ændring starter perioden forfra.</p>
       <div class="group-title">Lyd</div>
-      <div class="sound-row"><label for="sound">Metronomlyd</label><select id="sound"><option value="wood">Varmt træklik</option><option value="classic">Klassisk tik-tak</option><option value="soft">Ekstra blød</option></select></div>
-      <div class="sound-row"><label for="warning">Sidste tre slag</label><select id="warning"><option value="bell">Blød klokkelyd</option><option value="rising">Lysere klik</option><option value="echo">Lille ekko</option><option value="off">Ingen advarsel</option></select></div>
+      <div class="sound-row"><label for="sound">Grundlyd</label><select id="sound"><option value="wood">Varmt træklik</option><option value="classic">Klassisk tik-tak</option><option value="soft">Ekstra blød</option></select></div>
+      <div class="sound-row"><label for="warning">Sidste tre rotag</label><select id="warning"><option value="bell">Blød klokkelyd</option><option value="rising">Lysere klik</option><option value="echo">Lille ekko</option><option value="off">Ingen advarsel</option></select></div>
       <div class="setting-label"><label for="volume">Lydstyrke</label><span class="volume-label" id="volumeLabel">80 %</span></div>
       <div class="volume"><span aria-hidden="true">🔈</span><input id="volume" type="range" min="0" max="100" value="80" step="5" aria-label="Lydstyrke"><span aria-hidden="true">🔊</span></div>
-      <p class="tip">Samme bløde metronomlyd som i version 2.0. Telefonens højttaler bestemmer den maksimale lydstyrke.</p>
+      <p class="tip">Vi beholder den bløde grundlyd fra version 2.2. Telefonens højttaler bestemmer den maksimale lydstyrke.</p>
       <p class="small-note">Webappen er til brug med tændt skærm. iPhone kan stoppe lyden, når skærmen låses. Rigtig baggrundslyd kræver vores iOS-app.</p>
     </div>
   </details>
-  <footer>Ro-Metronom · Webversion 2.2</footer>
+  <footer>Ro-Rytme · Webversion 2.3 · Basispakken 2.2 er bevaret</footer>
 </main>
 <script>
 (() => {
   'use strict';
   const $ = id => document.getElementById(id);
   const clamp = (n, min, max) => Math.min(max, Math.max(min, n));
-  const clampInt = (value, fallback, min, max) => Number.isFinite(Number(value)) && String(value).trim() !== '' ? clamp(Math.round(Number(value)),min,max) : fallback;
-  const defaults = {presets:[21,42],durations:[60,60],selected:0,auto:false,sound:'wood',warning:'bell',volume:80};
-  const state = {...defaults, presets:[...defaults.presets],durations:[...defaults.durations],playing:false,ctx:null,noise:null,master:null,nextTime:0,stageStart:0,stageEnd:0,beat:0,timer:null,frame:null,wake:null,generation:0,visualBeats:[],lastVisualBeat:null};
+  const clampInt = (v, fallback, min, max) => String(v).trim()!=='' && Number.isFinite(Number(v)) ? clamp(Math.round(Number(v)),min,max) : fallback;
+  const ERGO = [5,28,5,62]; // Transitional phases are approximate; drive+recovery ~= 1:2.
+  const EQUAL = [25,25,25,25];
+  const names = ['Indsats','Træk','Afvikling','Fremkørsel'];
+  const colors = ['#d9b27b','#83aaa5','#849bad','#94a0ae'];
+  const defaults = {presets:[21,42],durations:[60,60],selected:0,auto:false,sound:'wood',warning:'bell',volume:80,mode:'ergo',custom:[...ERGO],cues:['accent','tap','tap','tap']};
+  const state = {...defaults,presets:[...defaults.presets],durations:[...defaults.durations],custom:[...defaults.custom],cues:[...defaults.cues],playing:false,ctx:null,noise:null,master:null,nextTime:0,stageStart:0,stageEnd:0,stageStrokes:0,stroke:0,phase:0,timer:null,frame:null,wake:null,visualCues:[],lastVisualCue:null,visualStrokes:[],lastVisualStroke:null,countBeep:3,countStart:0,firstGo:false,stageTransitions:[]};
   try {
-    const old = JSON.parse(localStorage.getItem('olsen-rometronom-v1') || '{}');
-    const saved = JSON.parse(localStorage.getItem('olsen-rometronom-v2') || 'null') || old;
-    if (Array.isArray(saved.presets) && saved.presets.length===2) state.presets=saved.presets.map((v,i)=>clampInt(v,defaults.presets[i],10,240));
-    if (Array.isArray(saved.durations) && saved.durations.length===2) state.durations=saved.durations.map((v,i)=>clampInt(v,defaults.durations[i],10,900));
-    else if (saved.duration!==undefined) state.durations=[clampInt(saved.duration,60,10,900),clampInt(saved.duration,60,10,900)];
-    if (saved.selected===0 || saved.selected===1) state.selected=saved.selected;
-    if (typeof saved.auto==='boolean') state.auto=saved.auto;
-    if (['wood','classic','soft'].includes(saved.sound)) state.sound=saved.sound;
-    if (['off','rising','echo','bell'].includes(saved.warning)) state.warning=saved.warning;
-    if (Number.isFinite(Number(saved.volume))) state.volume=clamp(Number(saved.volume),0,100);
-  } catch (_) {}
-  const save=()=>{try {localStorage.setItem('olsen-rometronom-v2',JSON.stringify({presets:state.presets,durations:state.durations,selected:state.selected,auto:state.auto,sound:state.sound,warning:state.warning,volume:state.volume}));} catch(_) {}};
-
+    const old=JSON.parse(localStorage.getItem('olsen-rometronom-v1')||'{}');
+    const v2=JSON.parse(localStorage.getItem('olsen-rometronom-v2')||'null')||old;
+    const saved=JSON.parse(localStorage.getItem('olsen-rorytme-v2-3')||'null')||v2;
+    if(Array.isArray(saved.presets)&&saved.presets.length===2) state.presets=saved.presets.map((v,i)=>clampInt(v,defaults.presets[i],10,240));
+    if(Array.isArray(saved.durations)&&saved.durations.length===2) state.durations=saved.durations.map((v,i)=>clampInt(v,defaults.durations[i],10,900));
+    else if(saved.duration!==undefined) state.durations=[clampInt(saved.duration,60,10,900),clampInt(saved.duration,60,10,900)];
+    if(saved.selected===0||saved.selected===1) state.selected=saved.selected;
+    if(typeof saved.auto==='boolean') state.auto=saved.auto;
+    if(['wood','classic','soft'].includes(saved.sound)) state.sound=saved.sound;
+    if(['off','rising','echo','bell'].includes(saved.warning)) state.warning=saved.warning;
+    if(Number.isFinite(Number(saved.volume))) state.volume=clamp(Number(saved.volume),0,100);
+    if(['rhythmic','custom','ergo'].includes(saved.mode)) state.mode=saved.mode;
+    if(Array.isArray(saved.custom)&&saved.custom.length===4&&saved.custom.every(x=>Number.isInteger(x)&&x>=1)&&saved.custom.reduce((a,b)=>a+b,0)===100)state.custom=[...saved.custom];
+    if(Array.isArray(saved.cues)&&saved.cues.length===4&&saved.cues.every(x=>['accent','tap','bell','off'].includes(x)))state.cues=[...saved.cues];
+  }catch(_){}
+  function save(){
+    try{localStorage.setItem('olsen-rorytme-v2-3',JSON.stringify({presets:state.presets,durations:state.durations,selected:state.selected,auto:state.auto,sound:state.sound,warning:state.warning,volume:state.volume,mode:state.mode,custom:state.custom,cues:state.cues}));}catch(_){}
+  }
+  const distribution=()=>state.mode==='rhythmic'?EQUAL:state.mode==='ergo'?ERGO:state.custom;
+  const offsets=()=>{const d=distribution();return[0,d[0]/100,(d[0]+d[1])/100,(d[0]+d[1]+d[2])/100];};
+  const strokeDuration=()=>60/state.presets[state.selected];
+  function configureStage(startTime) {
+    state.stageStart=startTime;
+    // Tempo switches at a stroke boundary rather than interrupting a recovery.
+    state.stageStrokes=Math.max(1,Math.ceil(state.durations[state.selected]/strokeDuration()-1e-9));
+    state.stageEnd=state.stageStart+state.stageStrokes*strokeDuration();
+    state.stroke=0;state.phase=0;state.nextTime=state.stageStart;
+  }
   const circumference=2*Math.PI*113;
-  function updateDial() {
-    // This progress follows elapsed time, not the beat. The centre never shows a ticking number.
+  function updateDial(){
     $('dial').dataset.auto=String(state.auto);
-    $('timeReadout').classList.toggle('hidden',!state.auto);
-    if(!state.auto) return;
-    const interval=state.durations[state.selected];
-    const remaining=state.playing && state.ctx ? clamp(state.stageEnd-state.ctx.currentTime,0,interval):interval;
-    const elapsed=state.playing && state.ctx ? clamp(1-remaining/interval,0,1):0;
-    const seconds=Math.ceil(remaining);
-    const time=seconds>=60 ? `${Math.floor(seconds/60)}:${String(seconds%60).padStart(2,'0')}` : `${seconds} s`;
-    const text='Skift om '+time;
-    if($('countdownText').textContent!==text) $('countdownText').textContent=text;
+    $('timeReadout').classList.toggle('hidden',!state.auto && !isCounting());
+    if(isCounting()){
+      const remaining=clamp(Math.ceil((state.stageStart-state.ctx.currentTime)/.65),1,3);
+      $('countdownText').textContent='Klar · '+remaining;
+    }else if(state.auto){
+      const period=state.durations[state.selected];
+      const remaining=state.playing&&state.ctx?clamp(state.stageEnd-state.ctx.currentTime,0,1000):period;
+      const seconds=Math.ceil(remaining);
+      const value=seconds>=60?`${Math.floor(seconds/60)}:${String(seconds%60).padStart(2,'0')}`:`${seconds} s`;
+      $('countdownText').textContent='Skift om '+value;
+    }
+    if(!state.auto)return;
+    const elapsed=state.playing&&state.ctx?clamp((state.ctx.currentTime-state.stageStart)/(state.stageEnd-state.stageStart),0,1):0;
     $('progressArc').style.strokeDasharray=`${(elapsed*circumference).toFixed(2)} ${circumference.toFixed(2)}`;
   }
-  function paintPulse() {
+  function isCounting(){return state.playing&&state.ctx&&state.ctx.currentTime<state.stageStart;}
+  function paintMotion(){
     const ctx=state.ctx;
-    if(!state.playing || !ctx || ctx.state!=='running') {
-      $('pulseField').style.opacity='0';
-      $('pulseWave').style.opacity='0';
-      return;
+    if(!state.playing||!ctx||ctx.state!=='running'){
+      $('pulseField').style.opacity='0';$('pulseWave').style.opacity='0';$('strokeDot').style.left='50%';return;
     }
-    // AudioContext is the same clock used by the audio scheduler. This keeps
-    // the visual pulse matched to the click instead of an unrelated UI timer.
     const now=ctx.currentTime;
-    while(state.visualBeats.length && state.visualBeats[0]<=now) {
-      state.lastVisualBeat=state.visualBeats.shift();
-    }
-    const age=state.lastVisualBeat===null ? Infinity : now-state.lastVisualBeat;
-    const travel=clamp(age/.74,0,1);
-    const fade=Math.pow(1-travel,1.5);
-    $('pulseField').style.opacity=(.92*fade).toFixed(3);
+    while(state.visualCues.length && state.visualCues[0].time<=now+.006)state.lastVisualCue=state.visualCues.shift();
+    while(state.visualStrokes.length && state.visualStrokes[0].time<=now+.006)state.lastVisualStroke=state.visualStrokes.shift();
+    const cue=state.lastVisualCue;
+    const age=cue?now-cue.time:Infinity;
+    const travel=clamp(age/.42,0,1);
+    const fade=Math.pow(1-travel,1.35);
+    const strength=cue?cue.strength:0;
+    $('pulseField').style.opacity=(strength*.92*fade).toFixed(3);
     $('pulseField').style.transform=`scale(${(.77+.31*travel).toFixed(3)})`;
-    $('pulseWave').style.opacity=(.78*fade).toFixed(3);
+    $('pulseWave').style.opacity=(strength*.78*fade).toFixed(3);
     $('pulseWave').style.transform=`scale(${(.53+.62*travel).toFixed(3)})`;
+    const stroke=state.lastVisualStroke;
+    if(stroke&&now>=stroke.time){
+      const progress=clamp((now-stroke.time)/stroke.period,0,1);
+      const x=stroke.absolute%2===0?progress:1-progress;
+      $('strokeDot').style.left=(x*100).toFixed(2)+'%';
+    }else $('strokeDot').style.left='50%';
   }
-  function paint() {
-    [0,1].forEach(i=>{
-      $('label'+i).textContent=state.presets[i];
-      $('value'+i).value=state.presets[i];
-      $('duration'+i).value=state.durations[i];
+  function paintDistribution(){
+    const pct=distribution();
+    $('phaseOverview').innerHTML=pct.map((v,i)=>`<div style="flex:${v};background:${colors[i]}" title="${names[i]} ${v}%"><span>${v>=12?v+'%':''}</span></div>`).join('');
+    $('rhythmMode').value=state.mode;
+    $('customPhases').hidden=state.mode!=='custom';
+    const message={rhythmic:'Fire lige lange faser. God til en enkel, musikalsk rytme.',custom:'Din personlige rytme; alle fire fasevarigheder gemmes.',ergo:'Forslag til ergometerrytme: cirka 1:2 mellem arbejde og fremkørsel. Faserne er vejledende, ikke en universel facitliste.'};
+    $('rhythmNote').textContent=message[state.mode];
+    for(let i=0;i<4;i++){ $('phase'+i).value=state.custom[i]; $('cue'+i).value=state.cues[i]; }
+  }
+  function paint(){
+    for(let i=0;i<2;i++){
+      $('label'+i).textContent=state.presets[i];$('value'+i).value=state.presets[i];$('duration'+i).value=state.durations[i];
       $('preset'+i).classList.toggle('active',i===state.selected);
       $('preset'+i).setAttribute('aria-pressed',String(i===state.selected));
-    });
+    }
     $('auto').checked=state.auto;
-    $('autoDescription').textContent=state.auto?'Tiderne indstilles nedenfor':'Skifter mellem de to tempi';
-    $('sound').value=state.sound;
-    $('warning').value=state.warning;
-    $('volume').value=state.volume;
-    $('volumeLabel').textContent=state.volume+' %';
-    $('start').textContent=state.playing?'■ Stop':'▶ Start';
-    $('start').classList.toggle('playing',state.playing);
-    $('start').setAttribute('aria-label',state.playing?'Stop metronom':'Start metronom');
-    updateDial();
+    $('autoDescription').textContent=state.auto?'Skifter ved næste hele rotag':'Skifter mellem de to tempi';
+    $('sound').value=state.sound;$('warning').value=state.warning;$('volume').value=state.volume;$('volumeLabel').textContent=state.volume+' %';
+    $('start').textContent=state.playing?'■ Stop':'▶ Start';$('start').classList.toggle('playing',state.playing);
+    $('start').setAttribute('aria-label',state.playing?'Stop rorytme':'Start rorytme');
+    paintDistribution();updateDial();
   }
-  function resetStage() {
-    if (!state.ctx) return;
-    state.generation++;
-    state.visualBeats=[];
-    state.lastVisualBeat=null;
-    paintPulse();
-    state.nextTime=state.ctx.currentTime+.065;
-    state.stageStart=state.nextTime;
-    state.stageEnd=state.stageStart+state.durations[state.selected];
-    state.beat=0;
+  function clearVisual(){state.visualCues=[];state.lastVisualCue=null;state.visualStrokes=[];state.lastVisualStroke=null;paintMotion();}
+  function resetStage(){
+    if(!state.ctx)return;
+    clearVisual();state.countBeep=3;state.firstGo=false;
+    configureStage(state.ctx.currentTime+.075);
   }
-  function setPreset(i) {
-    if(i!==state.selected) {
-      state.selected=i;
-      if(state.playing) resetStage();
-      save(); paint();
-    }
-  }
-  function setValue(type,i,v) {
+  function setPreset(i){if(i!==state.selected){state.selected=i;if(state.playing)resetStage();save();paint();}}
+  function setValue(type,i,v){
     const list=type==='tempo'?state.presets:state.durations;
-    const fallback=list[i];
-    const next=clampInt(v,fallback,type==='tempo'?10:10,type==='tempo'?240:900);
-    if(list[i]!==next) {
-      list[i]=next;
-      if(state.playing && state.selected===i) resetStage();
-    }
+    const next=clampInt(v,list[i],10,type==='tempo'?240:900);
+    if(list[i]!==next){list[i]=next;if(state.playing&&state.selected===i)resetStage();}
     save();paint();
   }
-  function createNoise(ctx) {
-    const buf=ctx.createBuffer(1,Math.ceil(ctx.sampleRate*.12),ctx.sampleRate);
-    const a=buf.getChannelData(0);
-    for(let i=0;i<a.length;i++) a[i]=Math.random()*2-1;
-    return buf;
+  function changeMode(mode){if(!['rhythmic','custom','ergo'].includes(mode))return;state.mode=mode;if(state.playing)resetStage();save();paint();}
+  function updateCustom(i,value){
+    const n=clampInt(value,state.custom[i],1,97);
+    const next=[0,0,0,0];next[i]=n;
+    const others=[0,1,2,3].filter(x=>x!==i);
+    const weights=others.map(j=>Math.max(0,state.custom[j]-1));
+    const total=weights.reduce((a,b)=>a+b,0);
+    const distributable=100-n-3;
+    const scores=weights.map(x=>total?x/total*distributable:distributable/3);
+    others.forEach((j,k)=>next[j]=1+Math.floor(scores[k]));
+    let missing=100-next.reduce((a,b)=>a+b,0);
+    const ranked=others.map((j,k)=>({j,part:scores[k]-Math.floor(scores[k])})).sort((a,b)=>b.part-a.part);
+    for(let k=0;k<missing;k++)next[ranked[k%3].j]++;
+    state.custom=next;
+    if(state.playing&&state.mode==='custom')resetStage();save();paint();
   }
-  function env(gain,t,amplitude,attack,release) {
-    const g=gain.gain;
-    g.setValueAtTime(.00001,t);
-    g.exponentialRampToValueAtTime(Math.max(.0001,amplitude),t+attack);
-    g.exponentialRampToValueAtTime(.00001,t+release);
-  }
-  function tap(t, opts={}) {
-    const ctx=state.ctx;
-    if(!ctx || !state.master || !state.volume) return;
-    const kind=state.sound;
-    const scale=state.volume/100 * (opts.scale||1);
-    const pitch=opts.pitch||1;
+  function createNoise(ctx){const buf=ctx.createBuffer(1,Math.ceil(ctx.sampleRate*.12),ctx.sampleRate),a=buf.getChannelData(0);for(let i=0;i<a.length;i++)a[i]=Math.random()*2-1;return buf;}
+  function env(gain,t,amplitude,attack,release){const g=gain.gain;g.setValueAtTime(.00001,t);g.exponentialRampToValueAtTime(Math.max(.0001,amplitude),t+attack);g.exponentialRampToValueAtTime(.00001,t+release);}
+  // Original version 2.2 sound engine preserved. No loudness profiles.
+  function tap(t,opts={}){
+    const ctx=state.ctx;if(!ctx||!state.master||!state.volume)return;
+    const kind=state.sound,scale=state.volume/100*(opts.scale||1),pitch=opts.pitch||1;
     const freq=kind==='classic'?950:kind==='soft'?540:690;
-    const tonal=ctx.createOscillator(); const tg=ctx.createGain();
-    tonal.type=kind==='soft'?'sine':'triangle';
-    tonal.frequency.setValueAtTime(freq*pitch,t);
-    tonal.frequency.exponentialRampToValueAtTime(freq*.59*pitch,t+.072);
+    const tonal=ctx.createOscillator(),tg=ctx.createGain();tonal.type=kind==='soft'?'sine':'triangle';
+    tonal.frequency.setValueAtTime(freq*pitch,t);tonal.frequency.exponentialRampToValueAtTime(freq*.59*pitch,t+.072);
     env(tg,t,scale*(kind==='soft'?.40:.56),.0025,kind==='soft'?.120:.084);
-    tonal.connect(tg).connect(state.master);
-    tonal.start(t);tonal.stop(t+.135);
-    const body=ctx.createOscillator(), bg=ctx.createGain();
-    body.type='sine';
-    body.frequency.setValueAtTime((kind==='classic'?460:330)*pitch,t);
-    body.frequency.exponentialRampToValueAtTime((kind==='classic'?330:210)*pitch,t+.11);
-    env(bg,t,scale*(kind==='soft'?.20:.25),.004,.13);
-    body.connect(bg).connect(state.master);
-    body.start(t);body.stop(t+.14);
-    const n=ctx.createBufferSource(),filter=ctx.createBiquadFilter(),ng=ctx.createGain();
-    n.buffer=state.noise;
-    filter.type=kind==='soft'?'lowpass':'bandpass';
-    filter.frequency.value=kind==='classic'?3000:kind==='soft'?1400:2000;
-    filter.Q.value=.65;
-    env(ng,t,scale*(kind==='soft'?.16:.34),.002,.04);
-    n.connect(filter).connect(ng).connect(state.master);
-    n.start(t);n.stop(t+.05);
+    tonal.connect(tg).connect(state.master);tonal.start(t);tonal.stop(t+.135);
+    const body=ctx.createOscillator(),bg=ctx.createGain();body.type='sine';
+    body.frequency.setValueAtTime((kind==='classic'?460:330)*pitch,t);body.frequency.exponentialRampToValueAtTime((kind==='classic'?330:210)*pitch,t+.11);
+    env(bg,t,scale*(kind==='soft'?.20:.25),.004,.13);body.connect(bg).connect(state.master);body.start(t);body.stop(t+.14);
+    const n=ctx.createBufferSource(),filter=ctx.createBiquadFilter(),ng=ctx.createGain();n.buffer=state.noise;
+    filter.type=kind==='soft'?'lowpass':'bandpass';filter.frequency.value=kind==='classic'?3000:kind==='soft'?1400:2000;filter.Q.value=.65;
+    env(ng,t,scale*(kind==='soft'?.16:.34),.002,.04);n.connect(filter).connect(ng).connect(state.master);n.start(t);n.stop(t+.05);
   }
-  function bell(t,order) {
-    const ctx=state.ctx;
-    if(!ctx || !state.master || !state.volume) return;
-    const fundamental=[850,1010,1200][clamp(order-1,0,2)];
-    const vol=state.volume/100;
-    [1,2,3].forEach((mult,i)=>{
-      const osc=ctx.createOscillator(),gain=ctx.createGain();
-      osc.type='sine';osc.frequency.value=fundamental*mult;
-      env(gain,t,vol*[.16,.065,.018][i],.006,.34-i*.05);
-      osc.connect(gain).connect(state.master);
-      osc.start(t);osc.stop(t+.36);
-    });
+  function bell(t,order){
+    const ctx=state.ctx;if(!ctx||!state.master||!state.volume)return;
+    const fundamental=[850,1010,1200][clamp(order-1,0,2)],vol=state.volume/100;
+    [1,2,3].forEach((mult,i)=>{const osc=ctx.createOscillator(),gain=ctx.createGain();osc.type='sine';osc.frequency.value=fundamental*mult;
+      env(gain,t,vol*[.16,.065,.018][i],.006,.34-i*.05);osc.connect(gain).connect(state.master);osc.start(t);osc.stop(t+.36);});
   }
-  function playClick(t, lastThreeOrder) {
-    if(lastThreeOrder && state.warning==='rising') tap(t,{pitch:1+lastThreeOrder*.17,scale:1.05});
-    else if(lastThreeOrder && state.warning==='echo') {tap(t);tap(t+.13,{scale:.28,pitch:.90});}
-    else if(lastThreeOrder && state.warning==='bell') {tap(t);bell(t+.014,lastThreeOrder);}
-    else tap(t);
+  function countdownBeep(t){
+    if(!state.volume)return;
+    const ctx=state.ctx,osc=ctx.createOscillator(),gain=ctx.createGain();
+    osc.type='sine';osc.frequency.value=890;env(gain,t,Math.min(.24,state.volume/100*.25),.007,.11);
+    osc.connect(gain).connect(state.master);osc.start(t);osc.stop(t+.14);
   }
-  // Returns 1,2,3 on precisely the final three clicks before a tempo change.
-  function warningIndex(t,period,end) {
-    const subsequentBeats=Math.max(0,Math.ceil((end-t)/period-1e-8)-1);
-    return subsequentBeats<3 ? 3-subsequentBeats : 0;
+  function playPhase(t,phase,warningOrder){
+    let type=state.cues[phase];
+    if(state.firstGo&&phase===0){type='accent';state.firstGo=false;}
+    let audible=type!=='off';
+    if(type==='tap')tap(t,{scale:.78,pitch:.94});
+    else if(type==='accent')tap(t,{pitch:1.16,scale:1.05});
+    else if(type==='bell')bell(t,2);
+    if(phase===0 && warningOrder){
+      if(state.warning==='bell')bell(t+.014,warningOrder);
+      else if(state.warning==='rising')tap(t,{pitch:1+warningOrder*.17,scale:.75});
+      else if(state.warning==='echo')tap(t+.13,{scale:.28,pitch:.9});
+      audible=audible||state.warning!=='off';
+    }
+    if(audible&&state.volume>0)state.visualCues.push({time:t,strength:phase===0?1:.67});
   }
-  function scheduler() {
-    if(!state.playing || !state.ctx || state.ctx.state!=='running') return;
-    const now=state.ctx.currentTime;
-    // A WebKit browser may suspend a webapp; do not unleash a backlog of old ticks.
-    if(state.nextTime<now-.20) resetStage();
+  function scheduler(){
+    if(!state.playing||!state.ctx||state.ctx.state!=='running')return;
+    const now=state.ctx.currentTime,lookahead=.14;
+    if(state.nextTime<now-.25 && now>state.stageStart+.25){resetStage();}
+    while(state.countBeep<3&&state.countStart+state.countBeep*.65<now+lookahead){
+      countdownBeep(state.countStart+state.countBeep*.65);
+      state.countBeep++;
+    }
     let count=0;
-    while(state.nextTime<now+.105 && count++<12) {
-      if(state.auto && state.nextTime>=state.stageEnd-.00001) {
-        state.selected=1-state.selected;
-        state.stageStart=state.stageEnd;
-        state.stageEnd=state.stageStart+state.durations[state.selected];
-        state.nextTime=state.stageStart;
-        state.beat=0;
-        save();paint();
+    while(state.nextTime<now+lookahead&&count++<28){
+      const period=strokeDuration();
+      const phase=state.phase;
+      const absStroke=Math.round(state.stageStart*10)*100000+state.stroke;
+      const remaining=state.stageStrokes-state.stroke;
+      const warning=state.auto && phase===0 && remaining<=3?4-remaining:0;
+      if(phase===0)state.visualStrokes.push({time:state.nextTime,period,absolute:absStroke});
+      playPhase(state.nextTime,phase,warning);
+      state.phase++;
+      if(state.phase===4){
+        state.phase=0;state.stroke++;
+        if(state.auto && state.stroke>=state.stageStrokes){
+          const end=state.stageEnd;
+          state.selected=1-state.selected;
+          configureStage(end);
+          // visual UI is updated by the scheduler near the exact transition.
+          save();paint();
+        }
       }
-      const period=60/state.presets[state.selected];
-      const order=state.auto?warningIndex(state.nextTime,period,state.stageEnd):0;
-      playClick(state.nextTime,order);
-      state.visualBeats.push(state.nextTime);
-      state.beat++;
-      state.nextTime+=period;
-      // Switch on the interval boundary even if it falls between two beats.
-      if(state.auto && state.nextTime>state.stageEnd)state.nextTime=state.stageEnd;
+      state.nextTime=state.stageStart+state.stroke*strokeDuration()+offsets()[state.phase]*strokeDuration();
     }
   }
-  async function start() {
-    try {
+  async function start(){
+    try{
       const Ctx=window.AudioContext||window.webkitAudioContext;
-      if(!Ctx) throw new Error('Denne browser understøtter ikke Web Audio.');
-      if(!state.ctx) {
+      if(!Ctx)throw new Error('Denne browser understøtter ikke Web Audio.');
+      if(!state.ctx){
         state.ctx=new Ctx();state.noise=createNoise(state.ctx);
-        const compressor=state.ctx.createDynamicsCompressor();
-        compressor.threshold.value=-10;
-        compressor.knee.value=14;
-        compressor.ratio.value=4;
-        compressor.attack.value=.002;
-        compressor.release.value=.12;
-        state.master=state.ctx.createGain();
-        state.master.gain.value=1.20;
-        state.master.connect(compressor).connect(state.ctx.destination);
+        const compressor=state.ctx.createDynamicsCompressor();compressor.threshold.value=-10;compressor.knee.value=14;compressor.ratio.value=4;compressor.attack.value=.002;compressor.release.value=.12;
+        state.master=state.ctx.createGain();state.master.gain.value=1.20;state.master.connect(compressor).connect(state.ctx.destination);
       }
       await state.ctx.resume();
-      if(state.ctx.state!=='running') throw new Error('Lyden er midlertidigt sat på pause af iPhone.');
-      state.playing=true;
-      resetStage();scheduler();
-      state.timer=setInterval(scheduler,25);
-      paint();frame();
-      if('wakeLock' in navigator) {
-        try {state.wake=await navigator.wakeLock.request('screen');} catch(_) {}
-      }
-    } catch(err) {stop();alert('Lyden kunne ikke startes: '+err.message);}
+      if(state.ctx.state!=='running')throw new Error('Lyden er midlertidigt sat på pause af iPhone.');
+      state.playing=true;clearVisual();
+      state.countStart=state.ctx.currentTime+.09;state.countBeep=0;
+      state.firstGo=true;
+      configureStage(state.countStart+3*.65);
+      scheduler();state.timer=setInterval(scheduler,25);paint();frame();
+      if('wakeLock' in navigator){try{state.wake=await navigator.wakeLock.request('screen');}catch(_){}}
+    }catch(err){stop();alert('Lyden kunne ikke startes: '+err.message);}
   }
-  function stop() {
-    state.playing=false;state.generation++;
-    clearInterval(state.timer);state.timer=null;
-    if(state.frame) cancelAnimationFrame(state.frame);state.frame=null;
-    state.visualBeats=[];state.lastVisualBeat=null;
-    paintPulse();
-    if(state.wake) {state.wake.release().catch(()=>{});state.wake=null;}
-    paint();
+  function stop(){
+    state.playing=false;clearInterval(state.timer);state.timer=null;
+    if(state.frame)cancelAnimationFrame(state.frame);state.frame=null;
+    state.visualCues=[];state.lastVisualCue=null;state.visualStrokes=[];state.lastVisualStroke=null;paintMotion();
+    if(state.wake){state.wake.release().catch(()=>{});state.wake=null;}paint();
   }
-  function frame() {if(!state.playing)return;updateDial();paintPulse();state.frame=requestAnimationFrame(frame);}
-  $('preset0').addEventListener('click',()=>setPreset(0));
-  $('preset1').addEventListener('click',()=>setPreset(1));
+  function frame(){if(!state.playing)return;updateDial();paintMotion();state.frame=requestAnimationFrame(frame);}
+  $('preset0').addEventListener('click',()=>setPreset(0));$('preset1').addEventListener('click',()=>setPreset(1));
   $('start').addEventListener('click',()=>{if(state.playing)stop();else start();});
-  $('auto').addEventListener('change',e=>{
-    state.auto=e.target.checked;
-    if(state.playing)resetStage();
-    save();paint();
-  });
-  for(let i=0;i<2;i++) {
+  $('auto').addEventListener('change',e=>{state.auto=e.target.checked;if(state.playing)resetStage();save();paint();});
+  for(let i=0;i<2;i++){
     $('value'+i).addEventListener('change',e=>setValue('tempo',i,e.target.value));
     $('duration'+i).addEventListener('change',e=>setValue('duration',i,e.target.value));
   }
@@ -384,15 +417,17 @@
     const values=type==='tempo'?state.presets:state.durations;
     setValue(type,Number(index),values[Number(index)]+Number(step));
   }));
+  $('rhythmMode').addEventListener('change',e=>changeMode(e.target.value));
+  $('ergometerReset').addEventListener('click',()=>{state.custom=[...ERGO];if(state.playing&&state.mode==='custom')resetStage();save();paint();});
+  for(let i=0;i<4;i++){
+    $('phase'+i).addEventListener('change',e=>updateCustom(i,e.target.value));
+    $('cue'+i).addEventListener('change',e=>{state.cues[i]=e.target.value;if(state.playing)resetStage();save();paint();});
+  }
   $('sound').addEventListener('change',e=>{state.sound=e.target.value;save();});
   $('warning').addEventListener('change',e=>{state.warning=e.target.value;save();});
   $('volume').addEventListener('input',e=>{state.volume=Number(e.target.value);$('volumeLabel').textContent=state.volume+' %';save();});
-  document.addEventListener('visibilitychange',()=>{
-    if(!document.hidden && state.playing && state.ctx && state.ctx.state==='suspended') {
-      state.ctx.resume().then(()=>resetStage()).catch(()=>{});
-    }
-  });
-  if('serviceWorker' in navigator && location.protocol==='https:')navigator.serviceWorker.register('sw.js').catch(()=>{});
+  document.addEventListener('visibilitychange',()=>{if(!document.hidden&&state.playing&&state.ctx&&state.ctx.state==='suspended'){state.ctx.resume().then(()=>resetStage()).catch(()=>{});}});
+  if('serviceWorker' in navigator&&location.protocol==='https:')navigator.serviceWorker.register('sw.js').catch(()=>{});
   paint();
 })();
 </script>

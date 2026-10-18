@@ -1,36 +1,19 @@
-RO-METRONOM – WEBAPP 2.2
-=========================
+Ro-Rytme Web 2.3 – ny version baseret på Ro-Metronom Web 2.2
 
-DET NYE I 2.2
-- Midten af ringen er nu fri for sekundtal. En tydelig, blød ravgylden puls
-  følger hvert metronomslag, synkroniseret efter lydmotorens ur.
-- En meget tynd, afdæmpet ravfarvet cirkel vokser i takt med den forløbne
-  tid, når Automatisk skift er aktivt. En fuld omgang = perioden for det
-  aktuelle tempo, uanset om perioden er 1 eller 5 minutter.
-- En lille tekst UNDER ringen viser 'Skift om 1:00' eller 'Skift om 42 s'.
-- Den oprindelige varme, behagelige lyd fra version 2.0 er genskabt;
-  lydprofil-vælgeren fra 2.1 er helt fjernet.
-- Begge tempi har fortsat individuelle varigheder, og de sidste tre slag
-  kan markeres med den diskrete klokkelyd (eller andre signaler).
-- Indstillingerne fra 2.0/2.1 videreføres. Lydprofil-valget ignoreres.
+Den oprindelige version 2.2 er urørt og bør gemmes som backup.
 
-INSTALLATION – OPDATER DEN EKSISTERENDE GITHUB PAGES-WEBAPP
-1. Udpak zip-filen på Windows.
-2. Åbn DanOerum/Ro-Metronom-Web på GitHub under fanen Code.
-3. Vælg Add file > Upload files.
-4. Upload alle SEKS filer inde i mappen (ikke selve mappen).
-5. Commit changes direkte på main, og vent på grøn Pages-udgivelse.
-6. Luk Ro-Metronom helt på iPhonen og åbn igen fra hjemmeskærmen.
-7. Kontrollér teksten 'Webversion 2.2' nederst i appen.
-   Hvis du ser den gamle version, prøv først et nyt besøg i Safari.
+Nyheder:
+- Begge tempoer vises i rotag/min.
+- Tre fordelinger af ét rotag: Rytmisk (25/25/25/25), Justerbar (fire individuelt regulerbare procenter som tilsammen giver 100), og Ergometerroning (5/28/5/62).
+- Ergometerfordelingen er en vejledende 1:2 arbejds-/fremkørselsrytme, ikke en biomekanisk sandhed for alle roere.
+- Fire individuelle fase-lyde: fremhævet DI, blødt da, pling eller stilhed.
+- Tre korte startbip; første indsats fremhæves som GO.
+- Lille prik bevæger sig fra side til side over præcis ét rotag.
+- Temposkift sker først ved hele rotag. Advarsel på de tre sidste hele rotag.
+- Den rolige 2.2-forside og dens lydmotor er bevaret.
 
-FILER
-- index.html: app, lyde, betjening og animation
-- sw.js: offline cache (ny cache-version for 2.2)
-- manifest.webmanifest: hjemmeskærmsinstallation
-- icon-192.png og icon-512.png: eksisterende appikoner
-- README.txt: denne vejledning
+Upload seks filer fra DENNE MAPPE til roden af GitHub-repositoriet DanOerum/Ro-Metronom-Web. Filen index.html skal ligge direkte i roden. Kontrollér at GitHub Pages er udgivet og genåbn webappen på telefonen.
 
-BEGRÆNSNING
-Web Audio på iPhone kan blive sat på pause, når skærmen låses.
-En indfødt iOS-app er nødvendig for pålidelig lyd under låst skærm.
+Vigtigt: ændringer i tempo, fordeling og cues under afspilning starter aktuelle cyklus forfra. På iPhone skal skærmen fortsat være tændt for pålidelig lyd.
+
+Webversion 2.3
